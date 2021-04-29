@@ -557,7 +557,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       if (child is RenderBoxModel && childParentData.isPositioned) {
         bool percentageOfSizingFound = child.renderStyle.isPercentageOfSizingExist(logicalContentWidth, logicalContentHeight);
         bool percentageToOwnFound = child.renderStyle.isPercentageToOwnExist();
-        bool percentageToContainingBlockFound = child.renderStyle.resolvePercentageToContainingBlock(logicalContentWidth, logicalContentHeight);
+        bool percentageToContainingBlockFound = child.renderStyle.resolvePercentageToContainingBlock(this, logicalContentWidth, logicalContentHeight);
 
         /// When percentage exists in sizing styles(width/height) and styles relies on its own size,
         /// it needs to relayout twice cause the latter relies on the size calculated in the first relayout
@@ -652,37 +652,26 @@ class RenderFlowLayout extends RenderLayoutBox {
         childNodeId = child.targetId;
       }
 
-      // Whether child need to layout
-      bool isChildNeedsLayout = true;
-      if (child is RenderBoxModel && child.hasSize) {
-        double childContentWidth = RenderBoxModel.getLogicalContentWidth(child);
-        double childContentHeight = RenderBoxModel.getLogicalContentHeight(child);
-        // Always layout child when parent is not laid out yet or child is marked as needsLayout
-        if (!hasSize || child.needsLayout || needsRelayout) {
-          isChildNeedsLayout = true;
-        } else {
-          Size childOldSize = _getChildSize(child);
-          // Need to layout child only when width and height both can be calculated from style
-          // and differ from its previous size
-          isChildNeedsLayout = childContentWidth != null && childContentHeight != null &&
-            (childOldSize.width != childContentWidth ||
-              childOldSize.height != childContentHeight);
-        }
+      BoxConstraints childConstraints;
+      if (child is RenderBoxModel) {
+        childConstraints = child.getConstraints();
+      } else if (child is RenderTextBox) {
+        childConstraints = child.getConstraints();
+      } else {
+        childConstraints = BoxConstraints();
       }
 
-      if (isChildNeedsLayout) {
-        DateTime childLayoutStart;
-        if (kProfileMode) {
-          childLayoutStart = DateTime.now();
-        }
-        final BoxConstraints childConstraints = child is RenderBoxModel ?
-          child.renderStyle.getConstraints() : BoxConstraints();
+      DateTime childLayoutStart;
+      if (kProfileMode) {
+        childLayoutStart = DateTime.now();
+      }
 
-        child.layout(childConstraints, parentUsesSize: true);
-        if (kProfileMode) {
-          DateTime childLayoutEnd = DateTime.now();
-          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
-        }
+print('flow layout --------------------- $child $childConstraints');
+
+      child.layout(childConstraints, parentUsesSize: true);
+      if (kProfileMode) {
+        DateTime childLayoutEnd = DateTime.now();
+        childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
@@ -1105,7 +1094,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         continue;
       }
       if (child is RenderBoxModel) {
-        bool percentageExist = child.renderStyle.resolvePercentageToContainingBlock(logicalContentWidth, logicalContentHeight);
+        bool percentageExist = child.renderStyle.resolvePercentageToContainingBlock(this, logicalContentWidth, logicalContentHeight);
         if (percentageExist) {
           percentageFound = true;
         }
@@ -1195,6 +1184,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       double runMainExtent = 0;
       void iterateRunChildren(int targetId, RenderBox runChild) {
         double runChildMainSize = runChild.size.width;
+        if (runChild is RenderTextBox) {
+          runChildMainSize = runChild.autoMinWidth;
+        } else if (runChild is RenderBoxModel) {
+          runChildMainSize = runChild.autoMinWidth;
+        }
         runMainExtent += runChildMainSize;
       }
       runChildren.forEach(iterateRunChildren);
@@ -1217,10 +1211,38 @@ class RenderFlowLayout extends RenderLayoutBox {
     List<_RunMetrics> runMetrics,
     ) {
     double autoMinSize = 0;
-    // Get the sum of lines
-    for (_RunMetrics curr in runMetrics) {
-      autoMinSize += curr.crossAxisExtent;
+    // Cross size of each run
+    List<double> runCrossSize = [];
+
+    void iterateRunMetrics(_RunMetrics runMetrics) {
+      Map<int, RenderBox> runChildren = runMetrics.runChildren;
+      double runCrossExtent = 0;
+      List<double> runChildrenCrossSize = [];
+      void iterateRunChildren(int targetId, RenderBox runChild) {
+        double runChildCrossSize = runChild.size.height;
+        if (runChild is RenderTextBox) {
+          runChildCrossSize = runChild.autoMinHeight;
+        } else if (runChild is RenderBoxModel) {
+          runChildCrossSize = runChild.autoMinHeight;
+        }
+        runChildrenCrossSize.add(runChildCrossSize);
+      }
+      runChildren.forEach(iterateRunChildren);
+      runCrossExtent = runChildrenCrossSize.reduce((double curr, double next) {
+        return curr > next ? curr : next;
+      });
+
+      runCrossSize.add(runCrossExtent);
     }
+
+    // Calculate the max main size of all runs
+    runMetrics.forEach(iterateRunMetrics);
+
+    // Get the sum of lines
+    for (double crossSize in runCrossSize) {
+      autoMinSize += crossSize;
+    }
+
     return autoMinSize;
   }
 
