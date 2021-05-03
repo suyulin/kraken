@@ -88,7 +88,10 @@ class _MyHomePageState extends State<MyBrowser> {
         child: _kraken = Kraken(
           viewportWidth: viewportSize.width - queryData.padding.horizontal,
           viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
-          bundlePath: 'assets/bundle.js',
+          // bundlePath: 'assets/bundle.js',
+          // bundleURL: 'http://30.77.74.123:3000/build/demo.phone.init.js',
+          bundleURL: 'http://192.168.50.60:3333/kraken/index.js',
+          // bundleURL: 'https://raw.githubusercontent.com/openkraken/kraken/master/kraken/example/assets/bundle.js',
         ),
     ));
   }
