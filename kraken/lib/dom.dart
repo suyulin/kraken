@@ -14,6 +14,7 @@ export 'src/dom/node.dart';
 export 'src/dom/text_node.dart';
 export 'src/dom/window.dart';
 export 'src/dom/document.dart';
+export 'src/dom/platform_view_client.dart';
 
 // Elements
 export 'src/dom/elements/semantics_text.dart';
@@ -28,4 +29,5 @@ export 'src/dom/elements/canvas/canvas.dart';
 export 'src/dom/elements/img.dart';
 export 'src/dom/elements/input.dart';
 export 'src/dom/elements/object.dart';
+export 'src/dom/elements/platform_view.dart';
 

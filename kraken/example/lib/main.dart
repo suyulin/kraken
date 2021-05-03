@@ -50,7 +50,7 @@ class _MyHomePageState extends State<MyBrowser> {
     final MediaQueryData queryData = MediaQuery.of(context);
     final TextEditingController textEditingController = TextEditingController();
 
-    Kraken _kraken;
+    KrakenWidget _kraken;
     AppBar appBar = AppBar(
         backgroundColor: Colors.black87,
         titleSpacing: 10.0,
@@ -60,7 +60,7 @@ class _MyHomePageState extends State<MyBrowser> {
             controller: textEditingController,
             onSubmitted: (value) {
               textEditingController.text = value;
-              _kraken?.loadURL(value);
+//              _kraken?.loadURL(value);
             },
             decoration: InputDecoration(
               hintText: 'Enter a app url',
@@ -85,7 +85,7 @@ class _MyHomePageState extends State<MyBrowser> {
         body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: _kraken = Kraken(
+        child: _kraken = KrakenWidget(
           viewportWidth: viewportSize.width - queryData.padding.horizontal,
           viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
           // bundlePath: 'assets/bundle.js',

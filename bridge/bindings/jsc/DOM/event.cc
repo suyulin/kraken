@@ -11,6 +11,7 @@
 #include "bindings/jsc/DOM/events/media_error_event.h"
 #include "bindings/jsc/DOM/events/message_event.h"
 #include "bindings/jsc/DOM/events/close_event.h"
+#include "bindings/jsc/DOM/events/platform_view_event.h"
 #include "bindings/jsc/DOM/events/intersection_change_event.h"
 #include "bindings/jsc/DOM/events/touch_event.h"
 #include <chrono>

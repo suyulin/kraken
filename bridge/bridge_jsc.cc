@@ -31,6 +31,7 @@
 #include "bindings/jsc/DOM/events/intersection_change_event.h"
 #include "bindings/jsc/DOM/events/media_error_event.h"
 #include "bindings/jsc/DOM/events/message_event.h"
+#include "bindings/jsc/DOM/events/platform_view_event.h"
 #include "bindings/jsc/DOM/events/touch_event.h"
 #include "bindings/jsc/DOM/node.h"
 #include "bindings/jsc/DOM/style_declaration.h"
@@ -90,6 +91,7 @@ JSBridge::JSBridge(int32_t contextId, const JSExceptionHandler &handler) : conte
   bindInputEvent(m_context);
   bindIntersectionChangeEvent(m_context);
   bindMessageEvent(m_context);
+  bindPlatformViewEvent(m_context);
   bindEventTarget(m_context);
   bindDocument(m_context);
   bindNode(m_context);

@@ -2,20 +2,35 @@
  * Copyright (C) 2019-present Alibaba Inc. All rights reserved.
  * Author: Kraken Team.
  */
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:kraken/bridge.dart';
+import 'package:kraken/gesture.dart';
 import 'package:kraken/kraken.dart';
 import 'package:kraken/module.dart';
-import 'package:kraken/gesture.dart';
-import 'package:kraken/css.dart';
 
-class Kraken extends StatelessWidget {
+typedef KrakenOnLoad = void Function(KrakenController controller);
+typedef KrakenOnBundleReady = void Function(KrakenController controller);
+typedef KrakenOnJSRuntimeReady = void Function(KrakenController controller);
+typedef KrakenOnDispose = void Function(String jsContextId);
+typedef KrakenOnStatus = void
+    Function(String status, KrakenController controller, {String message});
+
+typedef LoadMonitorHandler = Function(String url, Map info);
+
+bool debugPerformance = kDebugMode || true;
+
+class KrakenWidget extends StatefulWidget {
   // The background color for viewport, default to transparent.
   final Color background;
+
+  final String name;
 
   // the width of krakenWidget
   final double viewportWidth;
@@ -45,208 +60,515 @@ class Kraken extends StatelessWidget {
 
   final LoadErrorHandler onLoadError;
 
+  final DartKrakenControllerWrapper _dartKrakenController;
+
   final LoadHandler onLoad;
+
+  final LoadMonitorHandler loadMonitorHandler;
 
   final JSErrorHandler onJSError;
 
-  // Open a service to support Chrome DevTools for debugging.
-  // https://github.com/openkraken/devtools
-  final DevToolsService devToolsService;
+  final KrakenOnBundleReady onBundleReady;
+  final KrakenOnJSRuntimeReady onJSRuntimeReady;
+  final KrakenOnDispose onDispose;
+
+  final KrakenOnStatus onStatus;
 
   final bool debugEnableInspector;
 
   final GestureClient gestureClient;
 
-  KrakenController get controller {
-    return KrakenController.getControllerOfName(shortHash(this));
-  }
+  const KrakenWidget(
+      {Key key,
+      @required this.viewportWidth,
+      @required this.viewportHeight,
+      this.loadMonitorHandler,
+      this.bundleURL,
+      this.bundlePath,
+      this.bundleContent,
+      this.onLoad,
+      this.onBundleReady,
+      this.onJSRuntimeReady,
+      this.onDispose,
+      this.onStatus,
+      this.navigationDelegate,
+      this.javaScriptChannel,
+      this.background,
+      this.gestureClient,
+      DartKrakenControllerWrapper dartKrakenController,
 
-  loadContent(String bundleContent) async {
-    if (bundleContent == null) return;
-    await controller.unload();
-    await controller.loadBundle(
-      bundleContent: bundleContent
-    );
-    _evalBundle(controller, animationController);
-  }
+      // Kraken's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
+      // Maybe got unexpected error when change to other values, use this at your own risk!
+      // We will fixed this on next version released. (v0.6.0)
+      // Disable viewportWidth check and no assertion error report.
+      bool disableViewportWidthAssertion = false,
+      // Kraken's viewportHeight options only works fine when viewportHeight is equal to window.physicalSize.height / window.devicePixelRatio.
+      // Maybe got unexpected error when change to other values, use this at your own risk!
+      // We will fixed this on next version release. (v0.6.0)
+      // Disable viewportHeight check and no assertion error report.
+      bool disableViewportHeightAssertion = false,
+      // Callback functions when loading Javascript scripts failed.
+      this.onLoadError,
+      this.animationController,
+      this.debugEnableInspector,
+      this.onJSError,
+      this.name})
+      : _dartKrakenController = dartKrakenController,
+        super(key: key);
 
-  loadURL(String bundleURL) async {
-    if (bundleURL == null) return;
-    await controller.unload();
-    await controller.loadBundle(
-      bundleURL: bundleURL
-    );
-    _evalBundle(controller, animationController);
-  }
-
-  loadPath(String bundlePath) async {
-    if (bundlePath == null) return;
-    await controller.unload();
-    await controller.loadBundle(
-      bundlePath: bundlePath
-    );
-    _evalBundle(controller, animationController);
-  }
-
-  reload() async {
-    await controller.reload();
-  }
-
-  Kraken({
-    Key key,
-    this.viewportWidth,
-    this.viewportHeight,
-    this.bundleURL,
-    this.bundlePath,
-    this.bundleContent,
-    this.onLoad,
-    this.navigationDelegate,
-    this.javaScriptChannel,
-    this.background,
-    this.gestureClient,
-    this.devToolsService,
-    // Kraken's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
-    // Maybe got unexpected error when change to other values, use this at your own risk!
-    // We will fixed this on next version released. (v0.6.0)
-    // Disable viewportWidth check and no assertion error report.
-    bool disableViewportWidthAssertion = false,
-    // Kraken's viewportHeight options only works fine when viewportHeight is equal to window.physicalSize.height / window.devicePixelRatio.
-    // Maybe got unexpected error when change to other values, use this at your own risk!
-    // We will fixed this on next version release. (v0.6.0)
-    // Disable viewportHeight check and no assertion error report.
-    bool disableViewportHeightAssertion = false,
-    // Callback functions when loading Javascript scripts failed.
-    this.onLoadError,
-    this.animationController,
-    this.debugEnableInspector,
-    this.onJSError
-  }) : super(key: key);
+  @override
+  _KrakenWidgetState createState() => _KrakenWidgetState();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty<double>('viewportWidth', viewportWidth));
-    properties.add(DiagnosticsProperty<double>('viewportHeight', viewportHeight));
+    properties
+        .add(DiagnosticsProperty<double>('viewportHeight', viewportHeight));
+    properties.add(DiagnosticsProperty<String>('bundleURL', bundleURL));
+    properties.add(DiagnosticsProperty<String>('bundlePath', bundlePath));
+    properties.add(DiagnosticsProperty<String>('bundleContent', bundleContent));
   }
+}
+
+class _KrakenWidgetState extends State<KrakenWidget> {
+  KrakenController _controller;
+  Map _loadInfo = Map();
+  bool _hasFinishRenderFirstTime = false;
+  bool _hasBundleReady = false;
+
+  _KrakenWidgetState();
 
   @override
   Widget build(BuildContext context) {
-    return _KrakenRenderObjectWidget(this);
-  }
-}
-
-class _KrakenRenderObjectWidget extends SingleChildRenderObjectWidget {
-  /// Creates a widget that visually hides its child.
-  const _KrakenRenderObjectWidget(Kraken widget, {Key key})
-      : _krakenWidget = widget,
-        super(key: key);
-
-  final Kraken _krakenWidget;
-
-  @override
-  RenderObject createRenderObject(BuildContext context) {
-    if (kProfileMode) {
-      PerformanceTiming.instance(0).mark(PERF_CONTROLLER_INIT_START);
+    if (_controller == null) {
+      return Container();
     }
-
-    double viewportWidth = _krakenWidget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
-    double viewportHeight = _krakenWidget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
-
-    KrakenController controller = KrakenController(shortHash(_krakenWidget.hashCode), viewportWidth, viewportHeight,
-      background: _krakenWidget.background,
-      showPerformanceOverlay: Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
-      bundleContent: _krakenWidget.bundleContent,
-      bundleURL: _krakenWidget.bundleURL,
-      bundlePath: _krakenWidget.bundlePath,
-      onLoad: _krakenWidget.onLoad,
-      onLoadError: _krakenWidget.onLoadError,
-      onJSError: _krakenWidget.onJSError,
-      methodChannel: _krakenWidget.javaScriptChannel,
-      debugEnableInspector: _krakenWidget.debugEnableInspector,
-      gestureClient: _krakenWidget.gestureClient,
-      navigationDelegate: _krakenWidget.navigationDelegate,
-      devTools: _krakenWidget.devToolsService
+    if (_hasBundleReady == true && _hasFinishRenderFirstTime != true) {
+      handleFirstRender();
+    }
+    return KrakenRenderConstrainedBoxWidget(
+      widget.name,
+      key: ValueKey(widget.name),
+      constraints: BoxConstraints.expand(),
     );
-
-    if (kProfileMode) {
-      PerformanceTiming.instance(controller.view.contextId).mark(PERF_CONTROLLER_INIT_END);
-    }
-
-    return controller.view.getRootRenderObject();
   }
 
-  @override
-  void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
-    super.updateRenderObject(context, renderObject);
-    KrakenController controller = (renderObject as RenderObjectWithControllerMixin).controller;
-    controller.name = shortHash(_krakenWidget.hashCode);
-
-    bool viewportWidthHasChanged = controller.view.viewportWidth != _krakenWidget.viewportWidth;
-    bool viewportHeightHasChanged = controller.view.viewportHeight != _krakenWidget.viewportHeight;
-
-    if (viewportWidthHasChanged) {
-      controller.view.viewportWidth = _krakenWidget.viewportWidth;
-      controller.view.document.body.style.setProperty(WIDTH, controller.view.viewportWidth.toString() + 'px');
-    }
-
-    if (viewportHeightHasChanged) {
-      controller.view.viewportHeight = _krakenWidget.viewportHeight;
-      controller.view.document.body.style.setProperty(HEIGHT, controller.view.viewportHeight.toString() + 'px');
-    }
-
-    if (viewportWidthHasChanged || viewportHeightHasChanged) {
-      traverseElement(controller.view.document.body, (element) {
-        element.style.applyTargetProperties();
-        element.renderBoxModel.markNeedsLayout();
-      });
+  Future handleFirstRender() async {
+    _hasFinishRenderFirstTime = true;
+    _loadInfo['renderFinishFirstTime'] = DateTime.now().millisecondsSinceEpoch;
+    try {
+      await widget.loadMonitorHandler?.call(widget.bundleURL, _loadInfo);
+    } catch (e) {
+      print(e);
     }
   }
 
   @override
-  void didUnmountRenderObject(covariant RenderObject renderObject) {
-    KrakenController controller = (renderObject as RenderObjectWithControllerMixin).controller;
-    controller.dispose();
+  void initState() {
+    super.initState();
+    // Bootstrap binding.
+    init();
   }
 
   @override
-  _KrakenRenderObjectElement createElement() {
-    return _KrakenRenderObjectElement(this);
+  void didUpdateWidget(KrakenWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget != null && oldWidget.bundleURL != widget.bundleURL) {
+      // _updateUrl(widget.bundleURL);
+    }
+  }
+
+  Future _updateUrl(String url) async {
+    if (url != null && url.isNotEmpty) {
+      await _controller.reloadUrl(url);
+      setState(() {});
+    }
+  }
+
+  _innerOnJSError(String message) {
+    try {
+      if (widget.onStatus != null) {
+        widget.onStatus('JSError', _controller, message: message);
+      }
+    } catch (e) {
+      print(e);
+    }
+
+    try {
+      if (widget.onJSError != null) {
+        widget.onJSError(message);
+      }
+    } catch (e, stack) {
+      print(e);
+    }
+  }
+
+  Future init() async {
+    _loadInfo['loadBundleStart'] = DateTime.now().millisecondsSinceEpoch;
+    _loadInfo['cacheType'] =
+        widget.bundleContent != null && widget.bundleContent.isNotEmpty
+            ? "cache"
+            : "request";
+    int last;
+    int current;
+    int delta;
+
+    if (debugPerformance) {
+      last = DateTime.now().millisecondsSinceEpoch;
+    }
+    _controller = KrakenController.getControllerOfName(widget.name) ??
+        KrakenController(
+            widget.name, widget.viewportWidth, widget.viewportHeight,
+            showPerformanceOverlay:
+                Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
+            onLoadError: widget.onLoadError,
+            onJSError: _innerOnJSError,
+            debugEnableInspector: widget.debugEnableInspector ?? false,
+            bundleURL: widget.bundleURL,
+            background: Color(0xffffffff),
+            bundlePath: widget.bundlePath,
+            methodChannel: KrakenNativeChannel(),
+            bundleContent: widget.bundleContent);
+    widget._dartKrakenController?._provider = () => _controller;
+    current = DateTime.now().millisecondsSinceEpoch;
+    delta = current - last;
+    last = current;
+    if (debugPerformance) {
+      print("KrakenTyPerformance create controller pass [$delta]");
+    }
+    if (_controllerValid(_controller)) {
+      try {
+        if (widget.onLoad != null) {
+          await widget.onLoad(_controller);
+        }
+      } catch (e) {
+        print(e);
+      }
+    }
+    current = DateTime.now().millisecondsSinceEpoch;
+    delta = current - last;
+    last = current;
+    if (debugPerformance) {
+      print("KrakenTyPerformance call onload pass [$delta]");
+    }
+
+    if (_controllerValid(_controller)) {
+      await _controller?.loadBundle(
+          bundleURL: widget.bundleURL,
+          bundlePath: widget.bundlePath,
+          bundleContent: widget.bundleContent);
+    }
+
+    // Future.microtask(() async {
+    current = DateTime.now().millisecondsSinceEpoch;
+    delta = current - last;
+    last = current;
+    _loadInfo['loadBundleTime'] = delta;
+    if (debugPerformance) {
+      print("KrakenTyPerformance load bundle pass [$delta]");
+    }
+
+    if (_controllerValid(_controller)) {
+      try {
+        if (widget.onBundleReady != null) {
+          await widget.onBundleReady(_controller);
+        }
+      } catch (e) {
+        print(e);
+      }
+    }
+    current = DateTime.now().millisecondsSinceEpoch;
+    delta = current - last;
+    last = current;
+    if (debugPerformance) {
+      print("KrakenTyPerformance call onBundleReady controller pass [$delta]");
+    }
+
+    int _loadBundleFinishTime = DateTime.now().millisecondsSinceEpoch;
+    _loadInfo['loadBundleEnd'] = _loadBundleFinishTime;
+    _loadInfo['runBundleStart'] = _loadBundleFinishTime;
+    if (_controllerValid(_controller)) {
+      await _controller?.evalBundle();
+    }
+    current = DateTime.now().millisecondsSinceEpoch;
+    delta = current - last;
+    last = current;
+    _loadInfo['runBundleTime'] = delta;
+    if (debugPerformance) {
+      print("KrakenTyPerformance run bundle pass [$delta]");
+    }
+
+    int _runBundleStartFinishTime = DateTime.now().millisecondsSinceEpoch;
+    _loadInfo['runBundleEnd'] = _runBundleStartFinishTime;
+    _hasBundleReady = true;
+    if (_controllerValid(_controller)) {
+      try {
+        if (widget.onJSRuntimeReady != null) {
+          await widget.onJSRuntimeReady(_controller);
+        }
+      } catch (e) {
+        print(e);
+      }
+    }
+
+    current = DateTime.now().millisecondsSinceEpoch;
+    delta = current - last;
+    last = current;
+    if (debugPerformance) {
+      print("KrakenTyPerformance call onJSRuntimeReady pass [$delta]");
+    }
+    if (_controllerValid(_controller)) {
+      setState(() {});
+    }
+    // });
+  }
+
+  bool _controllerValid(final KrakenController controller) {
+    return controller != null &&
+        controller.view != null &&
+        controller.view.disposed != true &&
+        controller.view.contextId != null &&
+        controller.view.contextId >= 0 &&
+        isContextValid(controller.view.contextId);
+  }
+
+  Future<dynamic> _onDispose(String contextId) async {
+    try {
+      if (widget.onDispose != null) {
+        await widget.onDispose(contextId);
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    String jsContextId;
+    try {
+      jsContextId = '${_controller.view.contextId}';
+    } catch (e) {
+      print(e);
+    }
+
+    if (_controllerValid(_controller)) {
+      _controller?.dispose();
+    }
+
+    _onDispose(jsContextId);
   }
 }
 
-class _KrakenRenderObjectElement extends SingleChildRenderObjectElement {
-  _KrakenRenderObjectElement(_KrakenRenderObjectWidget widget) : super(widget);
+class KrakenRenderConstrainedBoxWidget extends SingleChildRenderObjectWidget {
+  KrakenRenderConstrainedBoxWidget(
+    this.id, {
+    Key key,
+    @required this.constraints,
+    Widget child,
+  })  : assert(constraints != null),
+        assert(constraints.debugAssertIsValid()),
+        super(key: key, child: child) {
+    this._controller = KrakenController.getControllerOfName(id);
+  }
+
+  double width;
+  double height;
+  String id;
+  KrakenController _controller;
+
+  /// The additional constraints to impose on the child.
+  final BoxConstraints constraints;
 
   @override
-  void mount(Element parent, dynamic newSlot) async {
-    super.mount(parent, newSlot);
+  KrakenRenderConstrainedBox createRenderObject(BuildContext context) {
+    _controller = KrakenController.getControllerOfName(id);
+    // return RenderConstrainedBox(additionalConstraints: constraints);
 
-    KrakenController controller = (renderObject as RenderObjectWithControllerMixin).controller;
-
-    if (controller.bundleContent == null && controller.bundlePath == null && controller.bundleURL == null) {
-      return;
-    }
-
-    await controller.loadBundle();
-
-    _evalBundle(controller, widget._krakenWidget.animationController);
+    // _controller?.view?.getRootRenderObject()?.parentData?.detach();
+    // if (_controller?.view?.getRootRenderObject()?.parent != null) {
+    //   RenderConstrainedBox box = _controller.view.getRootRenderObject().parent;
+    //   box.dropChild(_controller.view.getRootRenderObject());
+    // }
+    return KrakenRenderConstrainedBox(id,
+        child: _controller.view.getRootRenderObject(),
+        additionalConstraints: constraints);
   }
 
   @override
-  _KrakenRenderObjectWidget get widget => super.widget as _KrakenRenderObjectWidget;
+  void updateRenderObject(
+      BuildContext context, KrakenRenderConstrainedBox renderObject) {
+    renderObject.additionalConstraints = constraints;
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<BoxConstraints>(
+        'constraints', constraints,
+        showName: false));
+  }
 }
 
-void _evalBundle(KrakenController controller, AnimationController animationController) async {
-  // Execute JavaScript scripts will block the Flutter UI Threads.
-  // Listen for animationController listener to make sure to execute Javascript after route transition had completed.
-  if (animationController != null) {
-    animationController.addStatusListener((AnimationStatus status) {
-      if (status == AnimationStatus.completed) {
-        controller.evalBundle();
+class KrakenRenderConstrainedBox extends RenderProxyBox {
+  /// Creates a render box that constrains its child.
+  ///
+  /// The [additionalConstraints] argument must not be null and must be valid.
+  KrakenRenderConstrainedBox(
+    this.id, {
+    RenderBox child,
+    BoxConstraints additionalConstraints,
+  })  : assert(additionalConstraints != null),
+        assert(additionalConstraints.debugAssertIsValid()),
+        _additionalConstraints = additionalConstraints,
+        super(child);
+
+  String id;
+
+  /// Additional constraints to apply to [child] during layout.
+  BoxConstraints get additionalConstraints => _additionalConstraints;
+  BoxConstraints _additionalConstraints;
+
+  set additionalConstraints(BoxConstraints value) {
+    assert(value != null);
+    assert(value.debugAssertIsValid());
+    if (_additionalConstraints == value) return;
+    _additionalConstraints = value;
+    markNeedsLayout();
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    if (_additionalConstraints.hasBoundedWidth &&
+        _additionalConstraints.hasTightWidth)
+      return _additionalConstraints.minWidth;
+    double width = super.computeMinIntrinsicWidth(height);
+    assert(width.isFinite);
+    if (!_additionalConstraints.hasInfiniteWidth) {
+      width = _additionalConstraints.constrainWidth(width);
+    }
+    return width;
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    if (_additionalConstraints.hasBoundedWidth &&
+        _additionalConstraints.hasTightWidth)
+      return _additionalConstraints.minWidth;
+    double width = super.computeMaxIntrinsicWidth(height);
+    assert(width.isFinite);
+    if (!_additionalConstraints.hasInfiniteWidth) {
+      width = _additionalConstraints.constrainWidth(width);
+    }
+    return width;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    if (_additionalConstraints.hasBoundedHeight &&
+        _additionalConstraints.hasTightHeight)
+      return _additionalConstraints.minHeight;
+    double height = super.computeMinIntrinsicHeight(width);
+    assert(height.isFinite);
+    if (!_additionalConstraints.hasInfiniteHeight) {
+      height = _additionalConstraints.constrainHeight(height);
+    }
+
+    return height;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    if (_additionalConstraints.hasBoundedHeight &&
+        _additionalConstraints.hasTightHeight)
+      return _additionalConstraints.minHeight;
+    double height = super.computeMaxIntrinsicHeight(width);
+    assert(height.isFinite);
+
+    if (!_additionalConstraints.hasInfiniteHeight) {
+      height = _additionalConstraints.constrainHeight(height);
+    }
+
+    return height;
+  }
+
+  @override
+  void performResize() {
+    // TODO: implement performResize
+    super.performResize();
+  }
+
+  @override
+  void setupParentData(covariant RenderObject child) {
+    // TODO: implement setupParentData
+    super.setupParentData(child);
+  }
+
+  void _check(double width, double height) {
+    KrakenController _controller = KrakenController.getControllerOfName(id);
+    print("tylorvan check id[$id]->[$width,$height]");
+    bool viewportWidthHasChanged = _controller?.view?.viewportWidth != width;
+    bool viewportHeightHasChanged = _controller?.view?.viewportHeight != height;
+    Future.microtask(() {
+      if (viewportWidthHasChanged) {
+        _controller?.view?.viewportWidth = width;
+      }
+      if (viewportHeightHasChanged) {
+        _controller?.view?.viewportHeight = height;
+      }
+
+      if (viewportWidthHasChanged || viewportHeightHasChanged) {
+        // _controller.view.document.body.updateViewport(width, height);
+        // _controller.view.viewport.markNeedsLayout();
+        traverseElement(_controller.view.document.body, (element) {
+          element.style.applyTargetProperties();
+        });
       }
     });
-  } else {
-    await controller.evalBundle();
+  }
+
+  @override
+  void performLayout() {
+    final BoxConstraints constraints = this.constraints;
+
+    if (child != null) {
+      child?.layout(_additionalConstraints.enforce(constraints),
+          parentUsesSize: true);
+      size = child?.size;
+    } else {
+      size = _additionalConstraints.enforce(constraints).constrain(Size.zero);
+    }
+    _check(constraints.maxWidth, constraints.maxHeight);
+  }
+
+  @override
+  void debugPaintSize(PaintingContext context, Offset offset) {
+    super.debugPaintSize(context, offset);
+    assert(() {
+      Paint paint;
+      if (child == null || child.size != null || child.size.isEmpty) {
+        paint = Paint()..color = const Color(0x90909090);
+        context.canvas.drawRect(offset & size, paint);
+      }
+      return true;
+    }());
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty<BoxConstraints>(
+        'additionalConstraints', additionalConstraints));
   }
 }
 
+class _KrakenResizeBox extends RenderBox {}
+
+typedef KrakenControllerProvider = KrakenController Function();
+
+class DartKrakenControllerWrapper {
+  KrakenControllerProvider _provider;
+
+  KrakenControllerProvider get provider => _provider;
+}

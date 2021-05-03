@@ -17,6 +17,7 @@ class NativeKrakenInfo extends Struct {
   Pointer<Utf8> app_version;
   Pointer<Utf8> app_revision;
   Pointer<Utf8> system_name;
+  Pointer<Utf8> extra_info;
   Pointer<NativeFunction<Native_GetUserAgent>> getUserAgent;
 }
 
@@ -293,6 +294,15 @@ class NativeImgElement extends Struct {
 class NativeObjectElement extends Struct {
   Pointer<NativeElement> nativeElement;
 }
+
+typedef Native_Call = Void Function(Pointer<NativePlatformViewElement> nativePlatformViewElement, Pointer<NativeString> name,Pointer<NativeString> paramJson);
+
+class NativePlatformViewElement extends Struct {
+  Pointer<NativeElement> nativeElement;
+
+  Pointer<NativeFunction<Native_Call>> call;
+}
+
 
 class NativeInputElement extends Struct {
   Pointer<NativeElement> nativeElement;

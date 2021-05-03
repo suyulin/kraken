@@ -1432,7 +1432,7 @@ class Element extends Node
       } else {
         Image image = await renderBoxModel.toImage(pixelRatio: devicePixelRatio);
         ByteData byteData = await image.toByteData(format: ImageByteFormat.png);
-        captured = byteData.buffer.asUint8List();
+        captured = byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes);
       }
 
       completer.complete(captured);

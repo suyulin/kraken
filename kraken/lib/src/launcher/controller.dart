@@ -17,6 +17,7 @@ import 'package:kraken/dom.dart';
 import 'package:kraken/module.dart';
 import 'package:kraken/rendering.dart';
 import 'package:kraken/gesture.dart';
+import 'package:kraken/src/bridge/preload_bridge.dart';
 import 'package:kraken/src/module/module_manager.dart';
 import 'bundle.dart';
 

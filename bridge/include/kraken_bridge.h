@@ -37,6 +37,7 @@ struct KrakenInfo {
   const char *app_version{nullptr};
   const char *app_revision{nullptr};
   const char *system_name{nullptr};
+  char *extra_info{nullptr};
   GetUserAgent getUserAgent;
 };
 
@@ -87,6 +88,8 @@ KRAKEN_EXPORT_C
 void disposeContext(int32_t contextId);
 KRAKEN_EXPORT_C
 int32_t allocateNewContext();
+KRAKEN_EXPORT_C
+int32_t isContextValid(int32_t contextId);
 KRAKEN_EXPORT_C
 void *getJSContext(int32_t contextId);
 bool checkContext(int32_t contextId);

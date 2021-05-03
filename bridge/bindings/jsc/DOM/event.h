@@ -23,6 +23,7 @@
 #define EVENT_TOUCH_END "touchend"
 #define EVENT_TOUCH_CANCEL "touchcancel"
 #define EVENT_MESSAGE "message"
+#define EVENT_PLATFORM_VIEW "platformview"
 #define EVENT_CLOSE "close"
 #define EVENT_OPEN "open"
 #define EVENT_INTERSECTION_CHANGE "intersectionchange"

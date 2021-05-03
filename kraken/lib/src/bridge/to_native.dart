@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:kraken/dom.dart';
 import 'package:kraken/kraken.dart';
 import 'package:kraken/module.dart';
+import 'package:kraken/src/config.dart';
 import 'dart:io';
 
 import 'from_native.dart';
@@ -23,6 +25,7 @@ import 'native_types.dart';
 
 class KrakenInfo {
   Pointer<NativeKrakenInfo> _nativeKrakenInfo;
+  static String extraInfoStr = "Youku/1.22.4 +";
 
   KrakenInfo(Pointer<NativeKrakenInfo> info) : _nativeKrakenInfo = info;
 
@@ -46,8 +49,20 @@ class KrakenInfo {
     return Utf8.fromUtf8(_nativeKrakenInfo.ref.system_name);
   }
 
+  String get extraInfo {
+    if (_nativeKrakenInfo.ref.extra_info == nullptr) return '';
+    return Utf8.fromUtf8(_nativeKrakenInfo.ref.extra_info);
+  }
+
+  void _updateExtraInfo(String extraInfo) {
+    if (_nativeKrakenInfo.ref != nullptr) {
+      _nativeKrakenInfo.ref.extra_info = Utf8.toUtf8(extraInfo);
+    }
+  }
+
   String get userAgent {
     if (_nativeKrakenInfo.ref.getUserAgent == nullptr) return '';
+    _updateExtraInfo("$extraInfoStr");
     Dart_GetUserAgent getUserAgent = _nativeKrakenInfo.ref.getUserAgent.asFunction();
     return Utf8.fromUtf8(getUserAgent(_nativeKrakenInfo));
   }
@@ -77,21 +92,26 @@ final Dart_InvokeEventListener _invokeModuleEvent =
     nativeDynamicLibrary.lookup<NativeFunction<Native_InvokeEventListener>>('invokeModuleEvent').asFunction();
 
 void invokeModuleEvent(int contextId, String moduleName, Event event, String extra) {
-  assert(moduleName != null);
-  Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
-  Pointer<Void> nativeEvent = event == null ? nullptr : event.toNative().cast<Void>();
-  _invokeModuleEvent(contextId, nativeModuleName, event == null ? nullptr : Utf8.toUtf8(event.type), nativeEvent, stringToNativeString(extra ?? ''));
-  freeNativeString(nativeModuleName);
+  if (_jsContextValid(contextId)) {
+    Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
+    Pointer<Void> nativeEvent = event == null ? nullptr : event.toNative().cast<Void>();
+    _invokeModuleEvent(contextId, nativeModuleName, event == null ? nullptr : Utf8.toUtf8(event.type), nativeEvent, stringToNativeString(extra ?? ''));
+    freeNativeString(nativeModuleName);
+  }
 }
 
+bool _jsContextValid(int contextId) => contextId != null && contextId >= 0 && isContextValid(contextId);
+
 void emitUIEvent(int contextId, Pointer<NativeEventTarget> nativePtr, Event event) {
-  Pointer<NativeEventTarget> nativeEventTarget = nativePtr;
-  Dart_DispatchEvent dispatchEvent = nativeEventTarget.ref.dispatchEvent.asFunction();
-  Pointer<Void> nativeEvent = event.toNative().cast<Void>();
-  bool isCustomEvent = event is CustomEvent;
-  Pointer<NativeString> eventTypeString = stringToNativeString(event.type);
-  dispatchEvent(nativeEventTarget, eventTypeString, nativeEvent, isCustomEvent ? 1 : 0);
-  freeNativeString(eventTypeString);
+  if (_jsContextValid(contextId)) {
+    Pointer<NativeEventTarget> nativeEventTarget = nativePtr;
+    Dart_DispatchEvent dispatchEvent = nativeEventTarget.ref.dispatchEvent.asFunction();
+    Pointer<Void> nativeEvent = event.toNative().cast<Void>();
+    bool isCustomEvent = event is CustomEvent;
+    Pointer<NativeString> eventTypeString = stringToNativeString(event.type);
+    dispatchEvent(nativeEventTarget, eventTypeString, nativeEvent, isCustomEvent ? 1 : 0);
+    freeNativeString(eventTypeString);
+  }
 }
 
 void emitModuleEvent(int contextId, String moduleName, Event event, String extra) {
@@ -119,14 +139,23 @@ final Dart_EvaluateScripts _evaluateScripts =
     nativeDynamicLibrary.lookup<NativeFunction<Native_EvaluateScripts>>('evaluateScripts').asFunction();
 
 void evaluateScripts(int contextId, String code, String url, int line) {
-  Pointer<NativeString> nativeString = stringToNativeString(code);
-  Pointer<Utf8> _url = Utf8.toUtf8(url);
   try {
-    _evaluateScripts(contextId, nativeString, _url, line);
-  } catch (e, stack) {
-    print('$e\n$stack');
+    Pointer<NativeString> nativeString = stringToNativeString(code);
+    Pointer<Utf8> _url = Utf8.toUtf8(url);
+    try {
+      if (_jsContextValid(contextId)) {
+        if (kDebugMode) {
+          print("KrakenTy evaluateScripts contextId[$contextId] url[$url]");
+        }
+        _evaluateScripts(contextId, nativeString, _url, line);
+      }
+    } catch (e, stack) {
+      print('$e\n$stack');
+    }
+    freeNativeString(nativeString);
+  } catch (e) {
+    print(e);
   }
-  freeNativeString(nativeString);
 }
 
 // Register initJsEngine
@@ -137,6 +166,9 @@ final Dart_InitJSContextPool _initJSContextPool =
     nativeDynamicLibrary.lookup<NativeFunction<Native_InitJSContextPool>>('initJSContextPool').asFunction();
 
 void initJSContextPool(int poolSize) {
+  if(kDebugMode) {
+    print("KrakenTy initJSContextPool poolSize[$poolSize]");
+  }
   _initJSContextPool(poolSize);
 }
 
@@ -147,7 +179,12 @@ final Dart_DisposeContext _disposeContext =
     nativeDynamicLibrary.lookup<NativeFunction<Native_DisposeContext>>('disposeContext').asFunction();
 
 void disposeBridge(int contextId) {
-  _disposeContext(contextId);
+  if(kDebugMode) {
+    print("KrakenTy disposeBridge contextId[$contextId]");
+  }
+  if (_jsContextValid(contextId)) {
+    _disposeContext(contextId);
+  }
 }
 
 typedef Native_AllocateNewContext = Int32 Function();
@@ -157,7 +194,21 @@ final Dart_AllocateNewContext _allocateNewContext =
     nativeDynamicLibrary.lookup<NativeFunction<Native_AllocateNewContext>>('allocateNewContext').asFunction();
 
 int allocateNewContext() {
-  return _allocateNewContext();
+  int ret = _allocateNewContext();
+  if(kDebugMode) {
+    print("KrakenTy allocateNewContext[$ret]");
+  }
+  return ret;
+}
+
+typedef Native_IsContextValid = Int32 Function(Int32 contextId);
+typedef Dart_IsContextValid = int Function(int contextId);
+
+const int _valid = 1;
+final Dart_IsContextValid _isContextValid = nativeDynamicLibrary.lookup<NativeFunction<Native_IsContextValid>>('isContextValid').asFunction();
+
+bool isContextValid(int contextId) {
+  return _isContextValid(contextId) == _valid;
 }
 
 // Regisdster reloadJsContext
@@ -170,7 +221,12 @@ final Dart_ReloadJSContext _reloadJSContext =
 void reloadJSContext(int contextId) async {
   Completer completer = Completer<void>();
   Future.microtask(() {
-    _reloadJSContext(contextId);
+    if (_jsContextValid(contextId)) {
+      if(kDebugMode) {
+        print("KrakenTy reloadJSContext contextId[$contextId]");
+      }
+      _reloadJSContext(contextId);
+    }
     completer.complete();
   });
   return completer.future;
@@ -341,6 +397,7 @@ void clearUICommand(int contextId) {
   _clearUICommandItems(contextId);
 }
 
+
 void flushUICommand() {
   Map<int, KrakenController> controllerMap = KrakenController.getControllerMap();
   for (KrakenController controller in controllerMap.values) {
@@ -370,6 +427,13 @@ void flushUICommand() {
       int id = command.id;
       Pointer nativePtr = command.nativePtr;
 
+      if(Config.debugPerformance) {
+        print('[TyPerformance] flushUICommand -> jscontextID [${controller.view.contextId}][UICommand(${command
+            .toString()})');
+        if(Config.enableDebugPrint) {
+          Timeline.startSync("flushUICommand_single", arguments: {"INFO": command.toString()});
+        }
+      }
       try {
         switch (commandType) {
           case UICommandType.createElement:

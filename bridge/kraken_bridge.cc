@@ -25,15 +25,15 @@
 #elif defined(__CYGWIN__) && !defined(_WIN32)
 #define SYSTEM_NAME "windows" // Windows (Cygwin POSIX under Microsoft Window)
 #elif defined(__ANDROID__)
-#define SYSTEM_NAME "android" // Android (implies Linux, so it must come first)
+#define SYSTEM_NAME "Android" // Android (implies Linux, so it must come first)
 #elif defined(__linux__)
 #define SYSTEM_NAME "linux"                      // Debian, Ubuntu, Gentoo, Fedora, openSUSE, RedHat, Centos and other
 #elif defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
 #include <TargetConditionals.h>
 #if TARGET_IPHONE_SIMULATOR == 1
-#define SYSTEM_NAME "ios" // Apple iOS Simulator
+#define SYSTEM_NAME "iPhone OS" // Apple iOS Simulator
 #elif TARGET_OS_IPHONE == 1
-#define SYSTEM_NAME "ios" // Apple iOS
+#define SYSTEM_NAME "iPhone OS" // Apple iOS
 #elif TARGET_OS_MAC == 1
 #define SYSTEM_NAME "macos" // Apple macOS
 #endif
@@ -122,6 +122,10 @@ int32_t allocateNewContext() {
   return poolIndex;
 }
 
+int32_t isContextValid(int32_t contextId) {
+    return inited && contextId < maxPoolSize && contextPool[contextId] != nullptr;
+}
+
 void *getJSContext(int32_t contextId) {
   assert(checkContext(contextId) && "getJSContext: contextId is not valid.");
   return contextPool[contextId];
@@ -171,11 +175,11 @@ Screen *createScreen(double width, double height) {
 static KrakenInfo *krakenInfo{nullptr};
 
 const char *getUserAgent(KrakenInfo *info) {
-  const char *format = "%s/%s (%s; %s/%s)";
+  const char *format = "%s/%s (%s; %s/%s) %s";
   int32_t length = strlen(format) + sizeof(*info);
   char *buf = new char[length];
   std::string result;
-  std::snprintf(&buf[0], length, format, info->app_name, info->app_version, info->system_name, info->app_name, info->app_revision);
+  std::snprintf(&buf[0], length, format, info->app_name, info->app_version, info->system_name, info->app_name, info->app_revision, info->extra_info);
   return buf;
 }
 
@@ -186,6 +190,7 @@ KrakenInfo *getKrakenInfo() {
     krakenInfo->app_revision = APP_REV;
     krakenInfo->app_version = APP_VERSION;
     krakenInfo->system_name = SYSTEM_NAME;
+    krakenInfo->extra_info = "";
     krakenInfo->getUserAgent = getUserAgent;
   }
 

@@ -114,6 +114,8 @@ if ($ENV{KRAKEN_JS_ENGINE} MATCHES "jsc")
     bindings/jsc/DOM/elements/input_element.h
     bindings/jsc/DOM/elements/object_element.cc
     bindings/jsc/DOM/elements/object_element.h
+    bindings/jsc/DOM/elements/platform_view_element.cc
+    bindings/jsc/DOM/elements/platform_view_element.h
     bindings/jsc/KOM/performance.cc
     bindings/jsc/KOM/performance.h
     bindings/jsc/DOM/element.cc
@@ -130,6 +132,8 @@ if ($ENV{KRAKEN_JS_ENGINE} MATCHES "jsc")
     bindings/jsc/DOM/events/media_error_event.h
     bindings/jsc/DOM/events/message_event.cc
     bindings/jsc/DOM/events/message_event.h
+    bindings/jsc/DOM/events/platform_view_event.cc
+    bindings/jsc/DOM/events/platform_view_event.h
     bindings/jsc/DOM/events/close_event.cc
     bindings/jsc/DOM/events/close_event.h
     bindings/jsc/DOM/events/intersection_change_event.cc
