@@ -91,7 +91,8 @@ class _MyHomePageState extends State<MyBrowser> {
           // bundlePath: 'assets/bundle.js',
           // bundleURL: 'http://30.77.74.123:3000/build/demo.phone.init.js',
           // bundleURL: 'http://192.168.50.60:3333/kraken/index.js',
-          bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/index.js',
+          // bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/index.js',
+          bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/platformview.js',
           // bundleURL: 'https://raw.githubusercontent.com/openkraken/kraken/master/kraken/example/assets/bundle.js',
         ),
     ));

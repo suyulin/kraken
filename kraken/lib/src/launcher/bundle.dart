@@ -16,6 +16,13 @@ const String BUNDLE_PATH = 'KRAKEN_BUNDLE_PATH';
 const String ENABLE_DEBUG = 'KRAKEN_ENABLE_DEBUG';
 const String ENABLE_PERFORMANCE_OVERLAY = 'KRAKEN_ENABLE_PERFORMANCE_OVERLAY';
 
+const String DEFAULT_BUNDLE_PATH = 'assets/default.js';
+
+
+typedef ExtraBundleLoader = Future<ByteData> Function(String url, {String ua});
+
+ExtraBundleLoader bundleLoader;
+
 String getBundleURLFromEnv() {
   return Platform.environment[BUNDLE_URL];
 }
@@ -42,6 +49,11 @@ abstract class KrakenBundle {
   Future<void> resolve();
 
   static Future<KrakenBundle> getBundle(String path, {String contentOverride}) async {
+
+    if (path == null) {
+      path = DEFAULT_BUNDLE_PATH;
+    }
+
     KrakenBundle bundle;
     Uri uri = path != null ? Uri.parse(path) : null;
     if (contentOverride != null && contentOverride.isNotEmpty) {
@@ -102,9 +114,21 @@ class NetworkBundle extends KrakenBundle with BundleMixin {
   @override
   Future<void> resolve() async {
     NetworkAssetBundle bundle = NetworkAssetBundle(url);
-    bundle.httpClient.userAgent = getKrakenInfo().userAgent;
+    String ua = getKrakenInfo().userAgent;
+    bundle.httpClient.userAgent = ua;
     String absoluteURL = url.toString();
-    ByteData data = await bundle.load(absoluteURL);
+    ByteData data;
+    try {
+      if(bundleLoader != null) {
+        data = await bundleLoader(absoluteURL, ua: ua);
+      }
+    } catch(e){
+      print(e);
+    }
+    if (data == null || data.lengthInBytes == 0) {
+      data = await bundle.load(absoluteURL);
+    }
+
     content = await _resolveStringFromData(data, absoluteURL);
     isResolved = true;
   }

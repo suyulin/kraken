@@ -86,16 +86,16 @@ class KrakenViewController {
   Color background;
 
   KrakenViewController(
-    this._viewportWidth,
-    this._viewportHeight, {
-    this.background,
-    this.showPerformanceOverlay,
-    this.enableDebug = false,
-    int contextId,
-    this.rootController,
-    this.navigationDelegate,
-    this.gestureClient,
-  }) : _contextId = contextId {
+      this._viewportWidth,
+      this._viewportHeight, {
+        this.background,
+        this.showPerformanceOverlay,
+        this.enableDebug = false,
+        int contextId,
+        this.rootController,
+        this.navigationDelegate,
+        this.gestureClient,
+      }) : _contextId = contextId {
     if (kProfileMode) {
       PerformanceTiming.instance(0).mark(PERF_VIEW_CONTROLLER_PROPERTY_INIT);
     }
@@ -174,6 +174,9 @@ class KrakenViewController {
 
   void evaluateJavaScripts(String code, [String source = 'kraken://']) {
     assert(!_disposed, "Kraken have already disposed");
+    if (kDebugMode) {
+      print("KrakenTy evaluateScripts evaluateJavaScripts contextId[$contextId] url[$code]");
+    }
     evaluateScripts(_contextId, code, source, 0);
   }
 
@@ -423,6 +426,9 @@ class KrakenController {
 
   DevToolsService devTools;
 
+  String _jsRuntimeStatus = 'default';
+
+
   KrakenMethodChannel _methodChannel;
 
   KrakenMethodChannel get methodChannel => _methodChannel;
@@ -438,29 +444,35 @@ class KrakenController {
     _name = value;
   }
 
+  String get jsRuntimeStatus => _jsRuntimeStatus;
+
+  set jsRuntimeStatus(String value) {
+    _jsRuntimeStatus = value;
+  }
+
   // Enable debug inspector.
   bool debugEnableInspector;
   GestureClient _gestureClient;
 
   KrakenController(
-    String name,
-    double viewportWidth,
-    double viewportHeight, {
-    bool showPerformanceOverlay = false,
-    enableDebug = false,
-    String bundleURL,
-    String bundlePath,
-    String bundleContent,
-    Color background,
-    GestureClient gestureClient,
-    KrakenNavigationDelegate navigationDelegate,
-    KrakenMethodChannel methodChannel,
-    this.onLoad,
-    this.onLoadError,
-    this.onJSError,
-    this.debugEnableInspector,
-    this.devTools
-  })  : _name = name,
+      String name,
+      double viewportWidth,
+      double viewportHeight, {
+        bool showPerformanceOverlay = false,
+        enableDebug = false,
+        String bundleURL,
+        String bundlePath,
+        String bundleContent,
+        Color background,
+        GestureClient gestureClient,
+        KrakenNavigationDelegate navigationDelegate,
+        KrakenMethodChannel methodChannel,
+        this.onLoad,
+        this.onLoadError,
+        this.onJSError,
+        this.debugEnableInspector,
+        this.devTools
+      })  : _name = name,
         _bundleURL = bundleURL,
         _bundlePath = bundlePath,
         _bundleContent = bundleContent,

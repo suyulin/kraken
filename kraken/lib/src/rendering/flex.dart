@@ -1079,7 +1079,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (kProfileMode) {
           childLayoutStart = DateTime.now();
         }
-        print('flex layout 1 -------------- $child ${childConstraints}');
+        // print('flex layout 1 -------------- $child ${childConstraints}');
         child.layout(childConstraints, parentUsesSize: true);
         if (kProfileMode) {
           DateTime childLayoutEnd = DateTime.now();
@@ -1772,7 +1772,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           childLayoutStart = DateTime.now();
         }
 
-        print('flex layout 2 -------------- $child $innerConstraints');
+        // print('flex layout 2 -------------- $child $innerConstraints');
 
         child.layout(innerConstraints, parentUsesSize: true);
 

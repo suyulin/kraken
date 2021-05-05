@@ -183,6 +183,7 @@ class ElementManager implements WidgetsBindingObserver, ElementsBindingObserver 
       defineElement(IMAGE, (id, nativePtr, elementManager) => ImageElement(id, nativePtr.cast<NativeImgElement>(), elementManager));
       defineElement(CANVAS, (id, nativePtr, elementManager) => CanvasElement(id, nativePtr.cast<NativeCanvasElement>(), elementManager));
       defineElement(OBJECT, (id, nativePtr, elementManager) => ObjectElement(id, nativePtr.cast<NativeObjectElement>(), elementManager));
+      defineElement(PLATFORM_VIEW, (id, nativePtr, elementManager) => PlatformViewElement(id, nativePtr.cast<NativePlatformViewElement>(), elementManager));
       inited = true;
     }
   }

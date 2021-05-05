@@ -12,6 +12,18 @@ preloadBridge() {
 
 int peekPreloadContext() {
   int context = preloadedContext;
+  context = _ensureContext(context);
   preloadBridge();
+  return context;
+}
+
+int _ensureContext(int context) {
+  if(context == null){
+    try {
+      context = initBridge();
+    } catch (e) {
+      print(e);
+    }
+  }
   return context;
 }

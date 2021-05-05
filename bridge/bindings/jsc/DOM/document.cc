@@ -124,6 +124,10 @@ JSDocument::JSDocument(JSContext *context) : JSNode(context, "Document") {
       return new MessageEventInstance(JSMessageEvent::instance(context),
                                       reinterpret_cast<NativeMessageEvent *>(nativeEvent));
     });
+    JSEvent::defineEvent(EVENT_PLATFORM_VIEW, [](JSContext *context, void *nativeEvent) -> EventInstance * {
+      return new PlatformViewEventInstance(JSPlatformViewEvent::instance(context),
+                                      reinterpret_cast<NativePlatformViewEvent *>(nativeEvent));
+    });
     JSEvent::defineEvent(EVENT_CLOSE, [](JSContext *context, void *nativeEvent) -> EventInstance * {
       return new CloseEventInstance(JSCloseEvent::instance(context), reinterpret_cast<NativeCloseEvent *>(nativeEvent));
       ;
@@ -178,6 +182,9 @@ JSDocument::JSDocument(JSContext *context) : JSNode(context, "Document") {
     });
     JSElement::defineElement("object", [](JSContext *context) -> ElementInstance* {
       return new JSObjectElement::ObjectElementInstance(JSObjectElement::instance(context));
+    });
+    JSElement::defineElement("platform-view", [](JSContext *context) -> ElementInstance* {
+      return new JSPlatformViewElement::PlatformViewElementInstance(JSPlatformViewElement::instance(context));
     });
   }
 }
