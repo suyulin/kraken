@@ -661,17 +661,30 @@ class RenderFlowLayout extends RenderLayoutBox {
         childConstraints = BoxConstraints();
       }
 
-      DateTime childLayoutStart;
-      if (kProfileMode) {
-        childLayoutStart = DateTime.now();
+      // Whether child need to layout
+      bool isChildNeedsLayout = true;
+
+      if (child.hasSize &&
+        !needsRelayout &&
+        (childConstraints == child.constraints) &&
+        ((child is RenderBoxModel && !child.needsLayout) ||
+          (child is RenderTextBox && !child.needsLayout))
+      ) {
+        isChildNeedsLayout = false;
       }
 
-// print('flow layout --------------------- $child $childConstraints');
+      if (isChildNeedsLayout) {
+        DateTime childLayoutStart;
+        if (kProfileMode) {
+          childLayoutStart = DateTime.now();
+        }
 
-      child.layout(childConstraints, parentUsesSize: true);
-      if (kProfileMode) {
-        DateTime childLayoutEnd = DateTime.now();
-        childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
+        child.layout(childConstraints, parentUsesSize: true);
+
+        if (kProfileMode) {
+          DateTime childLayoutEnd = DateTime.now();
+          childLayoutDuration += (childLayoutEnd.microsecondsSinceEpoch - childLayoutStart.microsecondsSinceEpoch);
+        }
       }
 
       double childMainAxisExtent = _getMainAxisExtent(child);
@@ -1186,8 +1199,6 @@ class RenderFlowLayout extends RenderLayoutBox {
         double runChildMainSize = runChild.size.width;
         if (runChild is RenderTextBox) {
           runChildMainSize = runChild.autoMinWidth;
-        } else if (runChild is RenderBoxModel) {
-          runChildMainSize = runChild.autoMinWidth;
         }
         runMainExtent += runChildMainSize;
       }
@@ -1221,8 +1232,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       void iterateRunChildren(int targetId, RenderBox runChild) {
         double runChildCrossSize = runChild.size.height;
         if (runChild is RenderTextBox) {
-          runChildCrossSize = runChild.autoMinHeight;
-        } else if (runChild is RenderBoxModel) {
           runChildCrossSize = runChild.autoMinHeight;
         }
         runChildrenCrossSize.add(runChildCrossSize);

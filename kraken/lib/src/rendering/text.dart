@@ -97,6 +97,19 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     }
   }
 
+  // Mirror debugNeedsLayout flag in Flutter to use in layout performance optimization
+  bool needsLayout = false;
+
+  @override
+  void markNeedsLayout() {
+    super.markNeedsLayout();
+    needsLayout = true;
+  }
+
+  void markOwnNeedsLayout() {
+    needsLayout = true;
+  }
+
   BoxConstraints getConstraints() {
     if (whiteSpace == WhiteSpace.nowrap && _renderParagraph.overflow != TextOverflow.ellipsis) {
       return BoxConstraints();
@@ -146,8 +159,8 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
       // @FIXME: Minimum size of text equals to single word in browser
       // which cannot be calculated in Flutter currently.
-      autoMinWidth = 0;
-      autoMinHeight = 0;
+      autoMinWidth = size.width;
+      autoMinHeight = size.height;
     } else {
       performResize();
     }
