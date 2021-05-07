@@ -231,6 +231,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
             methodChannel: KrakenNativeChannel(),
             bundleContent: widget.bundleContent);
     widget._dartKrakenController?._provider = () => _controller;
+
     current = DateTime.now().millisecondsSinceEpoch;
     delta = current - last;
     last = current;

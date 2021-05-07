@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:kraken/kraken.dart';
 import 'dart:ui';
 
+import 'package:kraken_example/mock_prescript.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -88,10 +90,13 @@ class _MyHomePageState extends State<MyBrowser> {
         child: _kraken = KrakenWidget(
           viewportWidth: viewportSize.width - queryData.padding.horizontal,
           viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
+          onLoad: onJsBundleLoad,
           // bundlePath: 'assets/bundle.js',
-          // bundleURL: 'http://30.77.74.123:3000/build/demo.phone.init.js',
+          // bundleURL: 'http://30.77.74.86:3000/build/demo.phone.init.js',
+          // bundleURL: 'https://kraken.oss-cn-hangzhou.aliyuncs.com/data/youku.min.js',
+          bundleURL: 'https://t.youku.com/yep/page/kraken/m/cvd3r6f068',
           // bundleURL: 'http://192.168.50.60:3333/kraken/index.js',
-          bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/index.js',
+          // bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/index.js',
           // bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/platformview.js',
           // bundleURL: 'https://raw.githubusercontent.com/openkraken/kraken/master/kraken/example/assets/bundle.js',
         ),
