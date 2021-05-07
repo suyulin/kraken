@@ -3,6 +3,8 @@ import 'package:kraken/kraken.dart';
 import 'package:kraken_websocket/kraken_websocket.dart';
 import 'dart:ui';
 
+import 'mock_prescript.dart';
+
 void main() {
   KrakenWebsocket.initialize();
   runApp(MyApp());
@@ -88,9 +90,15 @@ class _MyHomePageState extends State<MyBrowser> {
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: _kraken = Kraken(
+          onLoad: onJsBundleLoad,
           viewportWidth: viewportSize.width - queryData.padding.horizontal,
           viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
-          bundlePath: 'assets/bundle.js',
+          // bundleURL: 'https://kraken.oss-cn-hangzhou.aliyuncs.com/data/youku.min.js',
+          bundleURL: 'https://t.youku.com/yep/page/kraken/m/cvd3r6f068',
+          // bundleURL: 'http://192.168.50.60:3333/kraken/index.js',
+          // bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/index.js',
+          // bundleURL: 'https://dev.g.alicdn.com/UniKraken/unikraken_rax_demos/0.0.2/kraken/platformview.js',
+          // bundleURL: 'https://raw.githubusercontent.com/openkraken/kraken/master/kraken/example/assets/bundle.js',
         ),
     ));
   }
