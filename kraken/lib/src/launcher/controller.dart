@@ -51,8 +51,9 @@ void setTargetPlatformForDesktop() {
 
 abstract class DevToolsService {
   void init(KrakenController controller);
-  void reload(KrakenController controller);
-  void dispose(KrakenController controller);
+  void willReload();
+  void didReload();
+  void dispose();
 }
 
 // An kraken View Controller designed for multiple kraken view control.
@@ -86,16 +87,16 @@ class KrakenViewController {
   Color background;
 
   KrakenViewController(
-      this._viewportWidth,
-      this._viewportHeight, {
-        this.background,
-        this.showPerformanceOverlay,
-        this.enableDebug = false,
-        int contextId,
-        this.rootController,
-        this.navigationDelegate,
-        this.gestureClient,
-      }) : _contextId = contextId {
+    this._viewportWidth,
+    this._viewportHeight, {
+    this.background,
+    this.showPerformanceOverlay,
+    this.enableDebug = false,
+    int contextId,
+    this.rootController,
+    this.navigationDelegate,
+    this.gestureClient,
+  }) : _contextId = contextId {
     if (kProfileMode) {
       PerformanceTiming.instance(0).mark(PERF_VIEW_CONTROLLER_PROPERTY_INIT);
     }
@@ -424,7 +425,7 @@ class KrakenController {
   // Error handler when got javascript error when evaluate javascript codes.
   JSErrorHandler onJSError;
 
-  DevToolsService devTools;
+  DevToolsService devToolsService;
 
   String _jsRuntimeStatus = 'default';
 
@@ -455,24 +456,24 @@ class KrakenController {
   GestureClient _gestureClient;
 
   KrakenController(
-      String name,
-      double viewportWidth,
-      double viewportHeight, {
-        bool showPerformanceOverlay = false,
-        enableDebug = false,
-        String bundleURL,
-        String bundlePath,
-        String bundleContent,
-        Color background,
-        GestureClient gestureClient,
-        KrakenNavigationDelegate navigationDelegate,
-        KrakenMethodChannel methodChannel,
-        this.onLoad,
-        this.onLoadError,
-        this.onJSError,
-        this.debugEnableInspector,
-        this.devTools
-      })  : _name = name,
+    String name,
+    double viewportWidth,
+    double viewportHeight, {
+    bool showPerformanceOverlay = false,
+    enableDebug = false,
+    String bundleURL,
+    String bundlePath,
+    String bundleContent,
+    Color background,
+    GestureClient gestureClient,
+    KrakenNavigationDelegate navigationDelegate,
+    KrakenMethodChannel methodChannel,
+    this.onLoad,
+    this.onLoadError,
+    this.onJSError,
+    this.debugEnableInspector,
+    this.devToolsService
+  })  : _name = name,
         _bundleURL = bundleURL,
         _bundlePath = bundlePath,
         _bundleContent = bundleContent,
@@ -505,8 +506,8 @@ class KrakenController {
     assert(!_nameIdMap.containsKey(name), 'found exist name of KrakenController, name: $name');
     _nameIdMap[name] = _view.contextId;
 
-    if (devTools != null) {
-      devTools.init(this);
+    if (devToolsService != null) {
+      devToolsService.init(this);
     }
   }
 
@@ -584,12 +585,16 @@ class KrakenController {
 
   // reload current kraken view.
   void reload() async {
+    if (devToolsService != null) {
+      devToolsService.willReload();
+    }
+
     await unload();
     await loadBundle();
     await evalBundle();
 
-    if (devTools != null) {
-      devTools.reload(this);
+    if (devToolsService != null) {
+      devToolsService.didReload();
     }
   }
 
@@ -606,8 +611,8 @@ class KrakenController {
     _controllerMap.remove(_view.contextId);
     _nameIdMap.remove(name);
 
-    if (devTools != null) {
-      devTools.dispose(this);
+    if (devToolsService != null) {
+      devToolsService.dispose();
     }
   }
 
