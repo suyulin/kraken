@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:kraken/bridge.dart';
+import 'package:kraken/css.dart';
 import 'package:kraken/gesture.dart';
 import 'package:kraken/kraken.dart';
 import 'package:kraken/module.dart';
@@ -514,16 +515,21 @@ class KrakenRenderConstrainedBox extends RenderProxyBox {
     Future.microtask(() {
       if (viewportWidthHasChanged) {
         _controller?.view?.viewportWidth = width;
+        _controller?.view?.document?.documentElement?.style?.setProperty(WIDTH, _controller?.view?.viewportWidth.toString() + 'px');
       }
       if (viewportHeightHasChanged) {
         _controller?.view?.viewportHeight = height;
+        _controller?.view?.document?.documentElement?.style?.setProperty(HEIGHT, _controller?.view?.viewportHeight.toString() + 'px');
+
       }
+
 
       if (viewportWidthHasChanged || viewportHeightHasChanged) {
         // _controller.view.document.body.updateViewport(width, height);
         // _controller.view.viewport.markNeedsLayout();
-        traverseElement(_controller.view.document.body, (element) {
+        traverseElement(_controller.view.document.documentElement, (element) {
           element.style.applyTargetProperties();
+          element.renderBoxModel.markNeedsLayout();
         });
       }
     });
