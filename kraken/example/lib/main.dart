@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kraken/kraken.dart';
 import 'package:kraken_websocket/kraken_websocket.dart';
+import 'package:kraken_devtools/kraken_devtools.dart';
 import 'dart:ui';
 
 import 'mock_prescript.dart';

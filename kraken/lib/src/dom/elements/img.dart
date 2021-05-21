@@ -45,7 +45,11 @@ class ImageElement extends Element {
   /// Number of image frame, used to identify gif after image loaded
   int _frameNumber = 0;
 
-  bool _hasLazyLoading = false;
+  bool _isInLazyLoading = false;
+
+  bool get _shouldLazyLoading {
+    return properties['loading'] == 'lazy';
+  }
 
   // Whether is multiframe image
   bool isMultiframe = false;
@@ -102,12 +106,14 @@ class ImageElement extends Element {
   void willAttachRenderer() {
     super.willAttachRenderer();
     style.addStyleChangeListener(_stylePropertyChanged);
-    _renderImage();
   }
 
   @override
   void didAttachRenderer() {
     super.didAttachRenderer();
+    // Should add image box after style has applied to ensure intersection observer
+    // attached to correct renderBoxModel
+    _renderImage();
     _resize();
   }
 
@@ -166,11 +172,10 @@ class ImageElement extends Element {
   }
 
   void _renderImage() {
-    if (_hasLazyLoading) return;
-    String loading = properties['loading'];
+    if (_isInLazyLoading) return;
     // Image dimensions(width/height) should specified for performance when lazy-load.
-    if (loading == 'lazy') {
-      _hasLazyLoading = true;
+    if (_shouldLazyLoading) {
+      _isInLazyLoading = true;
       renderBoxModel.addIntersectionChangeListener(_handleIntersectionChange);
     } else {
       _constructImageChild();
@@ -183,11 +188,13 @@ class ImageElement extends Element {
       // Once appear remove the listener
       _resetLazyLoading();
       _constructImageChild();
+      _loadImage();
+
     }
   }
 
   void _resetLazyLoading() {
-    _hasLazyLoading = false;
+    _isInLazyLoading = false;
     renderBoxModel.removeIntersectionChangeListener(_handleIntersectionChange);
   }
 
@@ -255,7 +262,7 @@ class ImageElement extends Element {
   }
 
   // Delay image size setting to next frame to make sure image has been layouted
-  // to wait for percentage size to be caculated correctly in the case of image has been cached
+  // to wait for percentage size to be calculated correctly in the case of image has been cached
   bool _hasImageLayoutCallbackPending = false;
   void _handleImageResizeAfterLayout() {
     if (_hasImageLayoutCallbackPending) return;
@@ -281,6 +288,13 @@ class ImageElement extends Element {
 
     double width = renderStyle.width ?? _propertyWidth;
     double height = renderStyle.height ?? _propertyHeight;
+
+    if (renderStyle.width == null && _propertyWidth != null) {
+      renderBoxModel.renderStyle.updateSizing(WIDTH, _propertyWidth);
+    }
+    if (renderStyle.height == null && _propertyHeight != null) {
+      renderBoxModel.renderStyle.updateSizing(HEIGHT, _propertyHeight);
+    }
 
     if (width == null && height == null) {
       width = naturalWidth;
@@ -320,82 +334,15 @@ class ImageElement extends Element {
     _imageStream = null;
   }
 
-  BoxFit _getBoxFit(String fit) {
-    switch (fit) {
-      case 'contain':
-        return BoxFit.contain;
-
-      case 'cover':
-        return BoxFit.cover;
-
-      case 'none':
-        return BoxFit.none;
-
-      case 'scaleDown':
-      case 'scale-down':
-        return BoxFit.scaleDown;
-
-      case 'fitWidth':
-      case 'fit-width':
-        return BoxFit.fitWidth;
-
-      case 'fitHeight':
-      case 'fit-height':
-        return BoxFit.fitHeight;
-
-      case 'fill':
-      default:
-        return BoxFit.fill;
-    }
-  }
-
-  Alignment _getAlignment(String position) {
-    // Syntax: object-position: <position>
-    // position: From one to four values that define the 2D position of the element. Relative or absolute offsets can be used.
-    // <position> = [ [ left | center | right ] || [ top | center | bottom ] | [ left | center | right | <length-percentage> ] [ top | center | bottom | <length-percentage> ]? | [ [ left | right ] <length-percentage> ] && [ [ top | bottom ] <length-percentage> ] ]
-
-    if (position != null) {
-      List<String> values = CSSStyleProperty.getPositionValues(position);
-      return Alignment(_getAlignmentValueFromString(values[0]), _getAlignmentValueFromString(values[1]));
-    }
-
-    // The default value for object-position is 50% 50%
-    return Alignment.center;
-  }
-
-  static double _getAlignmentValueFromString(String value) {
-    assert(value != null);
-
-    // Support percentage
-    if (value.endsWith('%')) {
-      // 0% equal to -1.0
-      // 50% equal to 0.0
-      // 100% equal to 1.0
-      return double.tryParse(value.substring(0, value.length - 1)) / 50 - 1;
-    }
-
-    switch (value) {
-      case 'top':
-      case 'left':
-        return -1;
-
-      case 'bottom':
-      case 'right':
-        return 1;
-
-      case 'center':
-      default:
-        return 0;
-    }
-  }
-
   RenderImage createRenderImageBox() {
-    BoxFit fit = _getBoxFit(style[OBJECT_FIT]);
-    Alignment alignment = _getAlignment(style[OBJECT_POSITION]);
+    RenderStyle renderStyle = renderBoxModel.renderStyle;
+    BoxFit objectFit = renderStyle.objectFit;
+    Alignment objectPosition = renderStyle.objectPosition;
+
     return RenderImage(
       image: _imageInfo?.image,
-      fit: fit,
-      alignment: alignment,
+      fit: objectFit,
+      alignment: objectPosition,
     );
   }
 
@@ -404,7 +351,7 @@ class ImageElement extends Element {
     super.removeProperty(key);
     if (key == 'src') {
       _removeImage();
-    } else if (key == 'loading' && _hasLazyLoading && _image == null) {
+    } else if (key == 'loading' && _isInLazyLoading && _image == null) {
       _resetLazyLoading();
     }
   }
@@ -418,9 +365,10 @@ class ImageElement extends Element {
 
     // Reset frame number to zero when image needs to reload
     _frameNumber = 0;
-    if (key == 'src') {
-      _setImage(value);
-    } else if (key == 'loading' && _hasLazyLoading) {
+    if (key == 'src' && !_shouldLazyLoading) {
+      // Loads the image immediately.
+      _loadImage();
+    } else if (key == 'loading' && _isInLazyLoading) {
       // Should reset lazy when value change.
       _resetLazyLoading();
     } else if (key == WIDTH) {
@@ -440,12 +388,13 @@ class ImageElement extends Element {
     }
   }
 
-  void _setImage(String source) {
+  void _loadImage() {
+    String source = properties['src'];
     if (_source == null || _source != source) {
       _source = source;
       if (source != null && source.isNotEmpty) {
         _removeStreamListener();
-        _image = CSSUrl.parseUrl(source, cache: properties['caching']);
+        _image = CSSUrl.parseUrl(source, cache: properties['caching'], contextId: elementManager.contextId);
         _imageStream = _image.resolve(ImageConfiguration.empty);
         _imageStream.addListener(_renderStreamListener);
 
@@ -476,10 +425,10 @@ class ImageElement extends Element {
   void _stylePropertyChanged(String property, String original, String present) {
     if (property == WIDTH || property == HEIGHT) {
       _resize();
-    } else if (property == OBJECT_FIT) {
-      _imageBox.fit = _getBoxFit(present);
-    } else if (property == OBJECT_POSITION) {
-      _imageBox.alignment = _getAlignment(present);
+    } else if (property == OBJECT_FIT && _imageBox != null) {
+      _imageBox.fit = renderBoxModel.renderStyle.objectFit;
+    } else if (property == OBJECT_POSITION && _imageBox != null) {
+      _imageBox.alignment = renderBoxModel.renderStyle.objectPosition;
     }
   }
 }

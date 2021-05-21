@@ -57,6 +57,8 @@ class Kraken extends StatelessWidget {
 
   final GestureClient gestureClient;
 
+  final HttpClientInterceptor httpClientInterceptor;
+
   KrakenController get controller {
     return KrakenController.getControllerOfName(shortHash(this));
   }
@@ -105,6 +107,8 @@ class Kraken extends StatelessWidget {
     this.background,
     this.gestureClient,
     this.devToolsService,
+    // Kraken's http client interceptor.
+    this.httpClientInterceptor,
     // Kraken's viewportWidth options only works fine when viewportWidth is equal to window.physicalSize.width / window.devicePixelRatio.
     // Maybe got unexpected error when change to other values, use this at your own risk!
     // We will fixed this on next version released. (v0.6.0)
@@ -165,7 +169,8 @@ class _KrakenRenderObjectWidget extends SingleChildRenderObjectWidget {
       debugEnableInspector: _krakenWidget.debugEnableInspector,
       gestureClient: _krakenWidget.gestureClient,
       navigationDelegate: _krakenWidget.navigationDelegate,
-      devToolsService: _krakenWidget.devToolsService
+      devToolsService: _krakenWidget.devToolsService,
+      httpClientInterceptor: _krakenWidget.httpClientInterceptor,
     );
 
     if (kProfileMode) {
@@ -186,16 +191,16 @@ class _KrakenRenderObjectWidget extends SingleChildRenderObjectWidget {
 
     if (viewportWidthHasChanged) {
       controller.view.viewportWidth = _krakenWidget.viewportWidth;
-      controller.view.document.body.style.setProperty(WIDTH, controller.view.viewportWidth.toString() + 'px');
+      controller.view.document.documentElement.style.setProperty(WIDTH, controller.view.viewportWidth.toString() + 'px');
     }
 
     if (viewportHeightHasChanged) {
       controller.view.viewportHeight = _krakenWidget.viewportHeight;
-      controller.view.document.body.style.setProperty(HEIGHT, controller.view.viewportHeight.toString() + 'px');
+      controller.view.document.documentElement.style.setProperty(HEIGHT, controller.view.viewportHeight.toString() + 'px');
     }
 
     if (viewportWidthHasChanged || viewportHeightHasChanged) {
-      traverseElement(controller.view.document.body, (element) {
+      traverseElement(controller.view.document.documentElement, (element) {
         element.style.applyTargetProperties();
         element.renderBoxModel.markNeedsLayout();
       });

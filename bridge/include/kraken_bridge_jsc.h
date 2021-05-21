@@ -57,6 +57,8 @@ struct NativeEvent;
 class JSGestureEvent;
 struct NativeGestureEvent;
 class GestureEventInstance;
+struct NativeMouseEvent;
+class MouseEventInstance;
 
 class JSContext {
 public:
@@ -417,8 +419,13 @@ public:
   static std::unordered_map<JSContext *, JSEventTarget *> instanceMap;
   static JSEventTarget *instance(JSContext *context);
   DEFINE_OBJECT_PROPERTY(EventTarget, 1, eventTargetId);
+
+  #if defined(IS_TEST)
   DEFINE_PROTOTYPE_OBJECT_PROPERTY(EventTarget, 4, addEventListener, removeEventListener, dispatchEvent,
-                                   __clearListeners__);
+                                   __kraken_clear_event_listeners__);
+  #else
+  DEFINE_PROTOTYPE_OBJECT_PROPERTY(EventTarget, 3, addEventListener, removeEventListener, dispatchEvent);
+  #endif
 
   JSObjectRef instanceConstructor(JSContextRef ctx, JSObjectRef constructor, size_t argumentCount,
                                   const JSValueRef *arguments, JSValueRef *exception) override;
@@ -447,8 +454,10 @@ private:
 
   JSFunctionHolder m_removeEventListener{context, prototypeObject, nullptr, "removeEventListener", removeEventListener};
   JSFunctionHolder m_dispatchEvent{context, prototypeObject, nullptr, "dispatchEvent", dispatchEvent};
-  JSFunctionHolder m_clearListeners{context, prototypeObject, nullptr, "__clearListeners__", clearListeners};
   JSFunctionHolder m_addEventListener{context, prototypeObject, nullptr, "addEventListener", addEventListener};
+  #ifdef IS_TEST
+  JSFunctionHolder m_clearListeners{context, prototypeObject, nullptr, "__kraken_clear_event_listeners__", clearListeners};
+  #endif
 };
 
 class EventTargetInstance : public HostClass::Instance {
@@ -663,7 +672,7 @@ struct NativeDocument {
 
 class DocumentInstance : public NodeInstance {
 public:
-  DEFINE_OBJECT_PROPERTY(Document, 5, nodeName, all, cookie, body, documentElement);
+  DEFINE_OBJECT_PROPERTY(Document, 4, nodeName, all, cookie, documentElement);
   DEFINE_PROTOTYPE_OBJECT_PROPERTY(Document, 6, createElement, createTextNode, createComment, getElementById,
                                    getElementsByTagName, createEvent);
 
@@ -682,7 +691,7 @@ public:
   NativeDocument *nativeDocument;
   std::unordered_map<std::string, std::vector<ElementInstance *>> elementMapById;
 
-  ElementInstance *body;
+  ElementInstance *documentElement;
 
 private:
   DocumentCookie m_cookie;
@@ -787,23 +796,6 @@ public:
   DEFINE_PROTOTYPE_OBJECT_PROPERTY(Element, 10, getBoundingClientRect, getAttribute, setAttribute, hasAttribute,
                                    removeAttribute, toBlob, click, scroll, scrollBy, scrollTo);
 
-  enum class ElementTagName {
-    kDiv,
-    kSpan,
-    kAnchor,
-    kAnimationPlayer,
-    kAudio,
-    kVideo,
-    kStrong,
-    kPre,
-    kParagraph,
-    kIframe,
-    kObject,
-    kImage,
-    kCanvas,
-    kInput,
-  };
-
   static std::unordered_map<JSContext *, JSElement *> instanceMap;
   static std::unordered_map<std::string, ElementCreator> elementCreatorMap;
   OBJECT_INSTANCE(JSElement)
@@ -860,7 +852,7 @@ private:
 class KRAKEN_EXPORT ElementInstance : public NodeInstance {
 public:
   ElementInstance() = delete;
-  explicit ElementInstance(JSElement *element, const char *tagName, bool sendUICommand);
+  explicit ElementInstance(JSElement *element, const char *tagName, bool shouldAddUICommand);
   explicit ElementInstance(JSElement *element, JSStringRef tagName, double targetId);
   ~ElementInstance();
 
@@ -954,21 +946,13 @@ struct NativeGestureEvent {
   explicit NativeGestureEvent(NativeEvent *nativeEvent) : nativeEvent(nativeEvent){};
 
   NativeEvent *nativeEvent;
-
   NativeString *state;
-
   NativeString *direction;
-
   double_t deltaX;
-
   double_t deltaY;
-
   double_t velocityX;
-
   double_t velocityY;
-
   double_t scale;
-
   double_t rotation;
 };
 
@@ -1022,6 +1006,69 @@ private:
   JSValueHolder m_scale{context, nullptr};
   JSValueHolder m_rotation{context, nullptr};
   NativeGestureEvent *nativeGestureEvent;
+};
+
+struct NativeMouseEvent {
+  NativeMouseEvent() = delete;
+  explicit NativeMouseEvent(NativeEvent *nativeEvent) : nativeEvent(nativeEvent){};
+
+  NativeEvent *nativeEvent;
+
+  double_t clientX;
+
+  double_t clientY;
+
+  double_t offsetX;
+
+  double_t offsetY;
+};
+
+class JSMouseEvent : public JSEvent {
+public:
+  DEFINE_OBJECT_PROPERTY(MouseEvent, 4, clientX, clientY, offsetX, offsetY);
+
+  DEFINE_PROTOTYPE_OBJECT_PROPERTY(MouseEvent, 1, initMouseEvent);
+
+  static std::unordered_map<JSContext *, JSMouseEvent *> instanceMap;
+  OBJECT_INSTANCE(JSMouseEvent)
+
+  JSObjectRef instanceConstructor(JSContextRef ctx, JSObjectRef constructor, size_t argumentCount,
+                                  const JSValueRef *arguments, JSValueRef *exception) override;
+
+  JSValueRef getProperty(std::string &name, JSValueRef *exception) override;
+
+protected:
+  JSMouseEvent() = delete;
+  explicit JSMouseEvent(JSContext *context);
+  ~JSMouseEvent() override;
+
+private:
+  friend MouseEventInstance;
+
+  JSFunctionHolder m_initMouseEvent{context, prototypeObject, this, "initMouseEvent", initMouseEvent};
+
+  static JSValueRef initMouseEvent(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+                                     size_t argumentCount, const JSValueRef arguments[], JSValueRef *exception);
+};
+
+class MouseEventInstance : public EventInstance {
+public:
+  MouseEventInstance() = delete;
+  explicit MouseEventInstance(JSMouseEvent *jsMouseEvent, std::string MouseEventType, JSValueRef eventInit,
+                                JSValueRef *exception);
+  explicit MouseEventInstance(JSMouseEvent *jsMouseEvent, NativeMouseEvent *nativeMouseEvent);
+  JSValueRef getProperty(std::string &name, JSValueRef *exception) override;
+  bool setProperty(std::string &name, JSValueRef value, JSValueRef *exception) override;
+  void getPropertyNames(JSPropertyNameAccumulatorRef accumulator) override;
+  ~MouseEventInstance() override;
+
+private:
+  friend JSMouseEvent;
+  JSValueHolder m_clientX{context, nullptr};
+  JSValueHolder m_clientY{context, nullptr};
+  JSValueHolder m_offsetX{context, nullptr};
+  JSValueHolder m_offsetY{context, nullptr};
+  NativeMouseEvent *nativeMouseEvent;
 };
 
 } // namespace kraken::binding::jsc
