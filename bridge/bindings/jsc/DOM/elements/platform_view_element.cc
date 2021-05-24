@@ -26,8 +26,8 @@ JSPlatformViewElement::PlatformViewElementInstance::PlatformViewElementInstance(
   NativeString args_01{};
   buildUICommandArgs(tagName, args_01);
 
-  foundation::UICommandTaskMessageQueue::instance(context->getContextId())
-      ->registerCommand(eventTargetId, UICommand::createElement, args_01, nativePlatformViewElement);
+  foundation::UICommandBuffer::instance(context->getContextId())
+      ->addCommand(eventTargetId, UICommand::createElement, args_01, nativePlatformViewElement);
 }
 
 JSValueRef JSPlatformViewElement::call(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
@@ -108,8 +108,8 @@ bool JSPlatformViewElement::PlatformViewElementInstance::setProperty(std::string
       NativeString args_02{};
 
       buildUICommandArgs(name, dataStringRef, args_01, args_02);
-      foundation::UICommandTaskMessageQueue::instance(_hostClass->contextId)
-        ->registerCommand(eventTargetId,UICommand::setProperty, args_01, args_02, nullptr);
+      foundation::UICommandBuffer::instance(_hostClass->contextId)
+        ->addCommand(eventTargetId,UICommand::setProperty, args_01, args_02, nullptr);
       break;
     }
     case PlatformViewElementProperty::type: {
@@ -120,8 +120,8 @@ bool JSPlatformViewElement::PlatformViewElementInstance::setProperty(std::string
       NativeString args_02{};
 
       buildUICommandArgs(name, typeStringRef, args_01, args_02);
-      foundation::UICommandTaskMessageQueue::instance(_hostClass->contextId)
-        ->registerCommand(eventTargetId,UICommand::setProperty, args_01, args_02, nullptr);
+      foundation::UICommandBuffer::instance(_hostClass->contextId)
+        ->addCommand(eventTargetId,UICommand::setProperty, args_01, args_02, nullptr);
       break;
     }
     default:
