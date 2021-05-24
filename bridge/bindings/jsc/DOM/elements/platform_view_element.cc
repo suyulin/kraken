@@ -63,15 +63,15 @@ JSValueRef JSPlatformViewElement::call(JSContextRef ctx, JSObjectRef function, J
 
 
 JSValueRef JSPlatformViewElement::PlatformViewElementInstance::getProperty(std::string &name, JSValueRef *exception) {
-  auto propertyMap = getPlatformViewElementPropertyMap();
-  auto prototypePropertyMap = getPlatformViewElementPrototypePropertyMap();
+  auto &propertyMap = getPlatformViewElementPropertyMap();
+  auto &prototypePropertyMap = getPlatformViewElementPrototypePropertyMap();
   JSStringHolder nameStringHolder = JSStringHolder(context, name);
   if (prototypePropertyMap.count(name) > 0) {
     return JSObjectGetProperty(ctx, prototype<JSPlatformViewElement>()->prototypeObject, nameStringHolder.getString(), exception);
   };
 
   if (propertyMap.count(name) > 0) {
-    auto property = propertyMap[name];
+    auto &property = propertyMap[name];
       switch (property) {
           case PlatformViewElementProperty::type:
           case PlatformViewElementProperty::currentType: {
@@ -88,8 +88,8 @@ JSValueRef JSPlatformViewElement::PlatformViewElementInstance::getProperty(std::
 }
 
 bool JSPlatformViewElement::PlatformViewElementInstance::setProperty(std::string &name, JSValueRef value, JSValueRef *exception) {
-  auto propertyMap = getPlatformViewElementPropertyMap();
-  auto prototypePropertyMap = getPlatformViewElementPrototypePropertyMap();
+  auto &propertyMap = getPlatformViewElementPropertyMap();
+  auto &prototypePropertyMap = getPlatformViewElementPrototypePropertyMap();
   JSStringHolder nameStringHolder = JSStringHolder(context, name);
 
   if (prototypePropertyMap.count(name) > 0) {
@@ -97,7 +97,7 @@ bool JSPlatformViewElement::PlatformViewElementInstance::setProperty(std::string
   };
 
   if (propertyMap.count(name) > 0) {
-    auto property = propertyMap[name];
+    auto &property = propertyMap[name];
     switch (property) {
     case PlatformViewElementProperty::data: {
       JSStringRef dataStringRef = JSValueToStringCopy(_hostClass->ctx, value, exception);
