@@ -50,11 +50,11 @@ PlatformViewEventInstance::PlatformViewEventInstance(JSPlatformViewEvent *jsPlat
 }
 
 JSValueRef PlatformViewEventInstance::getProperty(std::string &name, JSValueRef *exception) {
-  auto propertyMap = JSPlatformViewEvent::getPlatformViewEventPropertyMap();
+  auto &propertyMap = JSPlatformViewEvent::getPlatformViewEventPropertyMap();
 
   if (propertyMap.count(name) == 0) return EventInstance::getProperty(name, exception);
 
-  auto property = propertyMap[name];
+  auto &property = propertyMap[name];
 
   switch(property) {
     case JSPlatformViewEvent::PlatformViewEventProperty::name:
@@ -67,9 +67,9 @@ JSValueRef PlatformViewEventInstance::getProperty(std::string &name, JSValueRef 
 }
 
 bool PlatformViewEventInstance::setProperty(std::string &name, JSValueRef value, JSValueRef *exception) {
-  auto propertyMap = JSPlatformViewEvent::getPlatformViewEventPropertyMap();
+  auto &propertyMap = JSPlatformViewEvent::getPlatformViewEventPropertyMap();
   if (propertyMap.count(name) > 0) {
-    auto property = propertyMap[name];
+    auto &property = propertyMap[name];
 
     switch(property) {
     case JSPlatformViewEvent::PlatformViewEventProperty::name: {

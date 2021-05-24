@@ -59,7 +59,7 @@ class MethodChannelModule extends BaseModule {
 void setJSMethodCallCallback(KrakenController controller) {
   if (controller.methodChannel == null) return;
 
-  controller.methodChannel._onJSMethodCall = (String method, dynamic arguments) async {
+  controller.methodChannel._onJSMethodCall = (JSContext jsContext, String method, dynamic arguments) async {
     controller.module.moduleManager.emitModuleEvent(METHOD_CHANNEL_NAME, data: [method, arguments]);
   };
 }
