@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:ffi';
-import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -136,7 +135,7 @@ typedef Dart_EvaluateScripts = void Function(
     int contextId, Pointer<NativeString> code, Pointer<Utf8> url, int startLine);
 
 final Dart_EvaluateScripts _evaluateScripts =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_EvaluateScripts>>('evaluateScripts').asFunction();
+nativeDynamicLibrary.lookup<NativeFunction<Native_EvaluateScripts>>('evaluateScripts').asFunction();
 
 void evaluateScripts(int contextId, String code, String url, int line) {
   try {
@@ -328,12 +327,14 @@ const int args01StringMemOffset = 2;
 const int args02StringMemOffset = 3;
 const int nativePtrMemOffset = 4;
 
+final bool isEnabledLog = kDebugMode && Platform.environment['ENABLE_KRAKEN_JS_LOG'] == 'true';
+
 // We found there are performance bottleneck of reading native memory with Dart FFI API.
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
 // To ensure the fastest subsequent random access.
 List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, int commandLength, int contextId) {
   List<UICommand> results = List(commandLength);
-  Uint64List rawMemory = nativeCommandItems.asTypedList(commandLength * nativeCommandSize);
+  List<int> rawMemory = nativeCommandItems.asTypedList(commandLength * nativeCommandSize).toList(growable: false);
 
   for (int i = 0; i < commandLength * nativeCommandSize; i += nativeCommandSize) {
     UICommand command = UICommand();
@@ -376,7 +377,7 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
       }
     }
 
-    if (kDebugMode && Platform.environment['ENABLE_KRAKEN_JS_LOG'] == 'true') {
+    if (isEnabledLog) {
       String printMsg = '${command.type}, id: ${command.id}';
       for (int i = 0; i < command.args.length; i ++) {
         printMsg += ' args[$i]: ${command.args[i]}';
@@ -409,7 +410,7 @@ void flushUICommand() {
     }
 
     if (kProfileMode) {
-      PerformanceTiming.instance(controller.view.contextId).mark(PERF_FLUSH_UI_COMMAND_START);
+      PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_START);
     }
 
     List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, controller.view.contextId);
@@ -417,7 +418,7 @@ void flushUICommand() {
     SchedulerBinding.instance.scheduleFrame();
 
     if (kProfileMode) {
-      PerformanceTiming.instance(controller.view.contextId).mark(PERF_FLUSH_UI_COMMAND_END);
+      PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);
     }
 
     // For new ui commands, we needs to tell engine to update frames.
