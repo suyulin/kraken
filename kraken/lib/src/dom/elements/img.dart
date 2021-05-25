@@ -94,6 +94,7 @@ class ImageElement extends Element {
         tagName: IMAGE,
         defaultStyle: _defaultStyle) {
     _renderStreamListener = ImageStreamListener(_renderImageStream);
+    super.setProperty('loading', 'lazy');
     _nativeMap[nativeImgElement.address] = this;
 
     nativeImgElement.ref.getImageWidth = nativeGetImageWidth;
