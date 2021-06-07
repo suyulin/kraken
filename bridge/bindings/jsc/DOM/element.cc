@@ -727,6 +727,10 @@ void ElementInstance::_beforeUpdateId(JSValueRef oldId, JSValueRef newId) {
   }
 }
 
+std::string ElementInstance::getRegisteredTagName() {
+  return m_tagName.string();
+}
+
 std::string ElementInstance::tagName() {
   std::string tagName = m_tagName.string();
   std::transform(tagName.begin(), tagName.end(), tagName.begin(), ::toupper);
@@ -765,6 +769,7 @@ BoundingClientRect::BoundingClientRect(JSContext *context, NativeBoundingClientR
   : HostObject(context, "BoundingClientRect"), nativeBoundingClientRect(boundingClientRect) {}
 
 JSValueRef ElementInstance::getStringValueProperty(std::string &name) {
+  getDartMethod()->flushUICommand();
   JSStringRef stringRef = JSStringCreateWithUTF8CString(name.c_str());
   NativeString *nativeString = stringRefToNativeString(stringRef);
   NativeString *returnedString = nativeElement->getStringValueProperty(nativeElement, nativeString);

@@ -227,4 +227,48 @@ describe('MouseEvent', () => {
   
     span.click();
   });
+
+  it('should work width document addEventListener', async (done) => {
+    const div = document.createElement('div');
+    div.style.backgroundColor = 'red';
+    div.style.width = '100px';
+    div.style.height = '100px';
+    document.body.appendChild(div);
+
+    document.addEventListener('click', function handler(e) {
+      done();
+    });
+  
+    await simulateClick(10.0, 10.0);
+  });
+
+  it('should work width body addEventListener', async (done) => {
+    const div = document.createElement('div');
+    div.style.backgroundColor = 'red';
+    div.style.width = '100px';
+    div.style.height = '100px';
+    document.body.appendChild(div);
+
+    document.body.addEventListener('click', function handler(e) {
+      done();
+    });
+  
+    await simulateClick(10.0, 10.0);
+  });
+  
+  it('should not crash when cloneNode img element', async (done) => {
+    const img = document.createElement('img');
+    img.style.width = '100px';
+    img.style.height = '100px';
+    img.src = "https://img.alicdn.com/imgextra/i4/O1CN01vfjZK31uFiEAKOl8g_!!6000000006008-2-tps-200-200.png";
+    document.body.appendChild(img);
+    const img2 = img.cloneNode(true);
+    document.body.appendChild(img2);
+
+    img2.addEventListener('click',()=>{
+        done();
+    })
+
+    img2.click();
+  })
 });
