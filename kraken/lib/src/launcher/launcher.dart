@@ -30,18 +30,17 @@ void launch({
 
   VoidCallback _ordinaryOnMetricsChanged = window.onMetricsChanged;
 
-  // window.physicalSize are Size.zero when app first loaded.
-  // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
-  window.onMetricsChanged = () async {
-    if (window.physicalSize == Size.zero) return;
-
-    KrakenController controller = KrakenController(null, window.physicalSize.width / window.devicePixelRatio, window.physicalSize.height / window.devicePixelRatio,
+  Future<void> _initKrakenApp() async {
+    KrakenController controller = KrakenController(
+        null,
+        window.physicalSize.width / window.devicePixelRatio,
+        window.physicalSize.height / window.devicePixelRatio,
         background: background,
-        showPerformanceOverlay: Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
+        showPerformanceOverlay:
+            Platform.environment[ENABLE_PERFORMANCE_OVERLAY] != null,
         methodChannel: KrakenNativeChannel(),
         debugEnableInspector: debugEnableInspector,
-        devToolsService: devToolsService
-    );
+        devToolsService: devToolsService);
 
     controller.view.attachView(RendererBinding.instance.renderView);
 
@@ -51,11 +50,26 @@ void launch({
         bundleContent: bundleContent);
 
     await controller.evalBundle();
+  }
 
-    // Should proxy to ordinary window.onMetricsChanged callbacks.
-    _ordinaryOnMetricsChanged();
+  // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
+  // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
+  if (window.physicalSize == Size.zero) {
+    window.onMetricsChanged = () async {
+      if (window.physicalSize == Size.zero) {
+        window.onMetricsChanged = _ordinaryOnMetricsChanged;
+        return;
+      }
 
-    // Recover ordinary callback to window.onMetricsChanged
-    window.onMetricsChanged = _ordinaryOnMetricsChanged;
-  };
+      await _initKrakenApp();
+
+      // Should proxy to ordinary window.onMetricsChanged callbacks.
+      _ordinaryOnMetricsChanged();
+
+      // Recover ordinary callback to window.onMetricsChanged
+      window.onMetricsChanged = _ordinaryOnMetricsChanged;
+    };
+  } else {
+    await _initKrakenApp();
+  }
 }
