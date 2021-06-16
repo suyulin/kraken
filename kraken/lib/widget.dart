@@ -527,10 +527,12 @@ class KrakenRenderConstrainedBox extends RenderProxyBox {
       if (viewportWidthHasChanged || viewportHeightHasChanged) {
         // _controller.view.document.body.updateViewport(width, height);
         // _controller.view.viewport.markNeedsLayout();
-        traverseElement(_controller.view.document.documentElement, (element) {
-          element.style.applyTargetProperties();
-          element.renderBoxModel.markNeedsLayout();
-        });
+        if (_controller.view != null) {
+          traverseElement(_controller.view.document.documentElement, (element) {
+            element?.style?.applyTargetProperties();
+            element?.renderBoxModel?.markNeedsLayout();
+          });
+        }
       }
     });
   }

@@ -234,8 +234,8 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   }
 
   @override
-  bool dispatchEvent(Event event) {
-    return super.dispatchEvent(event);
+  void dispatchEvent(Event event) {
+    super.dispatchEvent(event);
   }
 
   /// Create a new platformed render box.
@@ -383,7 +383,7 @@ abstract class PlatformViewHost {
 
   JSContext getJSContext();
 
-  bool dispatchEvent(Event event);
+  void dispatchEvent(Event event);
 
 
 }
