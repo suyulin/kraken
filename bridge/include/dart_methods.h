@@ -7,6 +7,7 @@
 #define KRAKEN_DART_METHODS_H_
 
 #include "kraken_bridge.h"
+#include "kraken_bridge_jsc.h"
 
 #ifdef ENABLE_TEST
 #include "kraken_bridge_test.h"
@@ -103,6 +104,8 @@ void registerTestEnvDartMethods(uint64_t *methodBytes, int32_t length);
 
 KRAKEN_EXPORT
 std::shared_ptr<DartMethodPointer> getDartMethod();
+
+std::shared_ptr<DartMethodPointer> getDartMethod(void* owner);
 
 KRAKEN_EXPORT
 std::shared_ptr<DartMethodPointer> getDartMethod(int32_t keyHash);

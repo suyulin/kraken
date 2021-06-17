@@ -4,7 +4,7 @@
  */
 
 #include "dart_methods.h"
-#include "kraken_bridge.h"
+#include "bridge_jsc.h"
 #include <memory>
 
 namespace kraken {
@@ -14,20 +14,14 @@ namespace kraken {
 //    std::shared_ptr<DartMethodPointer> methodPointer = std::make_shared<DartMethodPointer>();
 
 std::shared_ptr<DartMethodPointer> getDartMethod() {
-  std::__thread_id currentThread = std::this_thread::get_id();
-    uint32_t isolateHash = 0;
-    std::shared_ptr<DartMethodPointer> methodPointer = getDartMethod(isolateHash);
-#ifndef NDEBUG
-  // Dart methods can only invoked from Flutter UI threads. Javascript Debugger like Safari Debugger can invoke
-  // Javascript methods from debugger thread and will crash the app.
-  // @TODO: implement task loops for async method call.
-  if (currentThread != getUIThreadId()) {
-    // return empty struct to stop further behavior.
-    return std::make_shared<DartMethodPointer>();
-  }
-#endif
+    return getDartMethod(0);
+}
 
-  return methodPointer;
+std::shared_ptr<DartMethodPointer> getDartMethod(void* owner) {
+    auto bridge = static_cast<kraken::JSBridge*>(owner);
+    int32_t isolateHash = bridge->isolateHash;
+
+  return getDartMethod(isolateHash);
 }
 
 std::shared_ptr<DartMethodPointer> getDartMethod(int32_t isolateHash) {
