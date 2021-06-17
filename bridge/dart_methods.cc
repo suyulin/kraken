@@ -9,10 +9,36 @@
 
 namespace kraken {
 
-std::shared_ptr<DartMethodPointer> methodPointer = std::make_shared<DartMethodPointer>();
+    std::unordered_map<uint32_t, std::shared_ptr<DartMethodPointer>> methodPointerMap{};
+
+//    std::shared_ptr<DartMethodPointer> methodPointer = std::make_shared<DartMethodPointer>();
 
 std::shared_ptr<DartMethodPointer> getDartMethod() {
   std::__thread_id currentThread = std::this_thread::get_id();
+    uint32_t isolateHash = 0;
+    std::shared_ptr<DartMethodPointer> methodPointer = getDartMethod(isolateHash);
+#ifndef NDEBUG
+  // Dart methods can only invoked from Flutter UI threads. Javascript Debugger like Safari Debugger can invoke
+  // Javascript methods from debugger thread and will crash the app.
+  // @TODO: implement task loops for async method call.
+  if (currentThread != getUIThreadId()) {
+    // return empty struct to stop further behavior.
+    return std::make_shared<DartMethodPointer>();
+  }
+#endif
+
+  return methodPointer;
+}
+
+std::shared_ptr<DartMethodPointer> getDartMethod(int32_t isolateHash) {
+  std::__thread_id currentThread = std::this_thread::get_id();
+    std::shared_ptr<DartMethodPointer> methodPointer;
+    if(methodPointerMap[isolateHash] == NULL){
+        methodPointerMap[isolateHash] = std::make_shared<DartMethodPointer>();
+        methodPointer = methodPointerMap[isolateHash];
+    } else {
+        methodPointer = methodPointerMap[isolateHash];
+    }
 
 #ifndef NDEBUG
   // Dart methods can only invoked from Flutter UI threads. Javascript Debugger like Safari Debugger can invoke
@@ -27,7 +53,14 @@ std::shared_ptr<DartMethodPointer> getDartMethod() {
   return methodPointer;
 }
 
-void registerDartMethods(uint64_t *methodBytes, int32_t length) {
+void registerDartMethods(int32_t keyHash, uint64_t *methodBytes, int32_t length) {
+
+    std::shared_ptr<DartMethodPointer> methodPointer = getDartMethod(keyHash);
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: &methodPointer: "<< &methodPointer << std::endl;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: &methodBytes:"<< &methodBytes << std::endl;
+
+
+
   size_t i = 0;
 
   methodPointer->invokeModule = reinterpret_cast<InvokeModule>(methodBytes[i++]);
@@ -46,6 +79,7 @@ void registerDartMethods(uint64_t *methodBytes, int32_t length) {
   methodPointer->initHTML = reinterpret_cast<InitHTML>(methodBytes[i++]);
   methodPointer->initWindow = reinterpret_cast<InitWindow>(methodBytes[i++]);
   methodPointer->initDocument = reinterpret_cast<InitDocument>(methodBytes[i++]);
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: &methodPointer->invokeModule"<< &methodPointer->invokeModule << std::endl;
 
 #if ENABLE_PROFILE
   methodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(methodBytes[i++]);
@@ -61,6 +95,8 @@ void registerDartMethods(uint64_t *methodBytes, int32_t length) {
 
 void registerTestEnvDartMethods(uint64_t *methodBytes, int32_t length) {
   size_t i = 0;
+    int32_t keyHash = 0;
+    std::shared_ptr<DartMethodPointer> methodPointer = getDartMethod(keyHash);
 
   methodPointer->onJsError = reinterpret_cast<OnJSError>(methodBytes[i++]);
   methodPointer->matchImageSnapshot = reinterpret_cast<MatchImageSnapshot>(methodBytes[i++]);

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:ffi';
+import 'dart:isolate';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -186,14 +187,14 @@ void disposeBridge(int contextId) {
   }
 }
 
-typedef Native_AllocateNewContext = Int32 Function();
-typedef Dart_AllocateNewContext = int Function();
+typedef Native_AllocateNewContext = Int32 Function(Int32 isolateHash);
+typedef Dart_AllocateNewContext = int Function(int isolateHash);
 
 final Dart_AllocateNewContext _allocateNewContext =
     nativeDynamicLibrary.lookup<NativeFunction<Native_AllocateNewContext>>('allocateNewContext').asFunction();
 
 int allocateNewContext() {
-  int ret = _allocateNewContext();
+  int ret = _allocateNewContext(Isolate.current.hashCode);
   if(kDebugMode) {
     print("KrakenTy allocateNewContext[$ret]");
   }

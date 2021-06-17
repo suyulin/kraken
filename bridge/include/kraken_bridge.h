@@ -103,7 +103,7 @@ KRAKEN_EXPORT_C
 void invokeModuleEvent(int32_t contextId, NativeString *module, const char *eventType, void *event,
                        NativeString *extra);
 KRAKEN_EXPORT_C
-void registerDartMethods(uint64_t *methodBytes, int32_t length);
+void registerDartMethods(int32_t isolateHash, uint64_t *methodBytes, int32_t length);
 KRAKEN_EXPORT_C
 Screen *createScreen(double width, double height);
 KRAKEN_EXPORT_C

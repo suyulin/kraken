@@ -94,7 +94,7 @@ struct DartMethodPointer {
   InitDocument initDocument{nullptr};
 };
 
-void registerDartMethods(uint64_t *methodBytes, int32_t length);
+void registerDartMethods(int32_t isolateHash, uint64_t *methodBytes, int32_t length);
 
 #ifdef IS_TEST
 KRAKEN_EXPORT
@@ -103,6 +103,9 @@ void registerTestEnvDartMethods(uint64_t *methodBytes, int32_t length);
 
 KRAKEN_EXPORT
 std::shared_ptr<DartMethodPointer> getDartMethod();
+
+KRAKEN_EXPORT
+std::shared_ptr<DartMethodPointer> getDartMethod(int32_t keyHash);
 
 } // namespace kraken
 

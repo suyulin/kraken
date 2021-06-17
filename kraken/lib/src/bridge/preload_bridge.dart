@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:kraken/bridge.dart';
 
 int preloadedContext;

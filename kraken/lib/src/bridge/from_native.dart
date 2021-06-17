@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -377,8 +378,8 @@ final List<int> _dartNativeMethods = [
   _nativeOnJsError.address,
 ];
 
-typedef Native_RegisterDartMethods = Void Function(Pointer<Uint64> methodBytes, Int32 length);
-typedef Dart_RegisterDartMethods = void Function(Pointer<Uint64> methodBytes, int length);
+typedef Native_RegisterDartMethods = Void Function(Int32 isolateHash, Pointer<Uint64> methodBytes, Int32 length);
+typedef Dart_RegisterDartMethods = void Function(int isolateHash,Pointer<Uint64> methodBytes, int length);
 
 final Dart_RegisterDartMethods _registerDartMethods =
     nativeDynamicLibrary.lookup<NativeFunction<Native_RegisterDartMethods>>('registerDartMethods').asFunction();
@@ -387,5 +388,5 @@ void registerDartMethodsToCpp() {
   Pointer<Uint64> bytes = allocate<Uint64>(count: _dartNativeMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
   nativeMethodList.setAll(0, _dartNativeMethods);
-  _registerDartMethods(bytes, _dartNativeMethods.length);
+  _registerDartMethods(Isolate.current.hashCode, bytes, _dartNativeMethods.length);
 }

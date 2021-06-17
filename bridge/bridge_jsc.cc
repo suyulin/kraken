@@ -58,7 +58,7 @@ ConsoleMessageHandler JSBridge::consoleMessageHandler {nullptr};
 /**
  * JSRuntime
  */
-JSBridge::JSBridge(int32_t contextId, const JSExceptionHandler &handler) : contextId(contextId) {
+JSBridge::JSBridge(int32_t isolateHash, int32_t contextId, const JSExceptionHandler &handler) : isolateHash(isolateHash), contextId(contextId) {
   auto errorHandler = [handler, this](int32_t contextId, const char *errmsg) {
     handler(contextId, errmsg);
     // trigger window.onerror handler.
