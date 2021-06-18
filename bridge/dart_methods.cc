@@ -9,17 +9,19 @@
 
 namespace kraken {
 
-    std::unordered_map<uint32_t, std::shared_ptr<DartMethodPointer>> methodPointerMap{};
+    std::unordered_map<int32_t, std::shared_ptr<DartMethodPointer>> methodPointerMap{};
 
 //    std::shared_ptr<DartMethodPointer> methodPointer = std::make_shared<DartMethodPointer>();
 
-std::shared_ptr<DartMethodPointer> getDartMethod() {
-    return getDartMethod(0);
-}
+//std::shared_ptr<DartMethodPointer> getDartMethod() {
+//    return getDartMethod(0);
+//}
 
 std::shared_ptr<DartMethodPointer> getDartMethod(void* owner) {
     auto bridge = static_cast<kraken::JSBridge*>(owner);
     int32_t isolateHash = bridge->isolateHash;
+    KRAKEN_LOG(VERBOSE) << "getDartMethod(void* owner)  bridge::--> " << bridge << std::endl;
+    KRAKEN_LOG(VERBOSE) << "getDartMethod(void* owner)  bridge::-->isolateHash " << bridge->isolateHash << std::endl;
 
   return getDartMethod(isolateHash);
 }
@@ -28,37 +30,55 @@ std::shared_ptr<DartMethodPointer> getDartMethod(int32_t isolateHash) {
   std::__thread_id currentThread = std::this_thread::get_id();
     std::shared_ptr<DartMethodPointer> methodPointer;
     if(methodPointerMap[isolateHash] == NULL){
-        methodPointerMap[isolateHash] = std::make_shared<DartMethodPointer>();
+        KRAKEN_LOG(VERBOSE) << "getDartMethod create isolateHash::--> " << isolateHash << std::endl;
+        std::shared_ptr<DartMethodPointer> sharedPtr = std::make_shared<DartMethodPointer>();
+        KRAKEN_LOG(VERBOSE) << "getDartMethod create std::shared_ptr<DartMethodPointer> sharedPtr:: " << sharedPtr << std::endl;
+        methodPointerMap[isolateHash] = sharedPtr;
         methodPointer = methodPointerMap[isolateHash];
+        KRAKEN_LOG(VERBOSE) << "getDartMethod create methodPointer:: " << methodPointer << std::endl;
+        KRAKEN_LOG(VERBOSE) << "getDartMethod create methodPointerMap[isolateHash]:: " << methodPointerMap[isolateHash] << std::endl;
     } else {
         methodPointer = methodPointerMap[isolateHash];
     }
+    KRAKEN_LOG(VERBOSE) << "getDartMethod currentThread::--> " << currentThread << std::endl;
 
 #ifndef NDEBUG
   // Dart methods can only invoked from Flutter UI threads. Javascript Debugger like Safari Debugger can invoke
   // Javascript methods from debugger thread and will crash the app.
   // @TODO: implement task loops for async method call.
   if (currentThread != getUIThreadId()) {
-    // return empty struct to stop further behavior.
-    return std::make_shared<DartMethodPointer>();
+      KRAKEN_LOG(VERBOSE) << "getDartMethod(int32_t isolateHash) getUIThreadId():: " << getUIThreadId() << std::endl;
+      KRAKEN_LOG(VERBOSE) << "getDartMethod(int32_t isolateHash) currentThread != getUIThreadId() true:: methodPointer" << methodPointer << std::endl;
+      // return empty struct to stop further behavior.
+//    return std::make_shared<DartMethodPointer>();
   }
 #endif
+  KRAKEN_LOG(VERBOSE) << "getDartMethod(int32_t isolateHash) methodPointer:: " << methodPointer << std::endl;
+
+  KRAKEN_LOG(VERBOSE) << "getDartMethod(int32_t isolateHash)  methodPointerMap.size() "<< methodPointerMap.size() << std::endl;
+
+  KRAKEN_LOG(VERBOSE) << "getDartMethod(int32_t isolateHash)"<< isolateHash <<
+                           " methodPointer->initHTML::--> " << methodPointer->initHTML << std::endl;
 
   return methodPointer;
 }
 
-void registerDartMethods(int32_t keyHash, uint64_t *methodBytes, int32_t length) {
+void registerDartMethods(int32_t isolateHash, uint64_t *methodBytes, int32_t length) {
 
-    std::shared_ptr<DartMethodPointer> methodPointer = getDartMethod(keyHash);
-    KRAKEN_LOG(VERBOSE) << "registerDartMethods: &methodPointer: "<< &methodPointer << std::endl;
-    KRAKEN_LOG(VERBOSE) << "registerDartMethods: &methodBytes:"<< &methodBytes << std::endl;
-
-
+    std::shared_ptr<DartMethodPointer> methodPointer = getDartMethod(isolateHash);
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: isolateHash---->>> : "<< isolateHash << std::endl;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodPointer: "<< methodPointer << std::endl;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodBytes:"<< methodBytes << std::endl;
 
   size_t i = 0;
 
-  methodPointer->invokeModule = reinterpret_cast<InvokeModule>(methodBytes[i++]);
-  methodPointer->requestBatchUpdate = reinterpret_cast<RequestBatchUpdate>(methodBytes[i++]);
+
+    InvokeModule tmp = reinterpret_cast<InvokeModule>(methodBytes[i++]);
+    methodPointer->invokeModule = tmp;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodBytes[0] "<< methodBytes[0] << std::endl;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodPointer->invokeModule "<< tmp << std::endl;
+
+    methodPointer->requestBatchUpdate = reinterpret_cast<RequestBatchUpdate>(methodBytes[i++]);
   methodPointer->reloadApp = reinterpret_cast<ReloadApp>(methodBytes[i++]);
   methodPointer->setTimeout = reinterpret_cast<SetTimeout>(methodBytes[i++]);
   methodPointer->setInterval = reinterpret_cast<SetInterval>(methodBytes[i++]);
@@ -71,9 +91,11 @@ void registerDartMethods(int32_t keyHash, uint64_t *methodBytes, int32_t length)
   methodPointer->toBlob = reinterpret_cast<ToBlob>(methodBytes[i++]);
   methodPointer->flushUICommand = reinterpret_cast<FlushUICommand>(methodBytes[i++]);
   methodPointer->initHTML = reinterpret_cast<InitHTML>(methodBytes[i++]);
-  methodPointer->initWindow = reinterpret_cast<InitWindow>(methodBytes[i++]);
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodPointer->initHTML methodBytes[i-1]"<< methodBytes[i-1] << std::endl;
+    methodPointer->initWindow = reinterpret_cast<InitWindow>(methodBytes[i++]);
   methodPointer->initDocument = reinterpret_cast<InitDocument>(methodBytes[i++]);
-    KRAKEN_LOG(VERBOSE) << "registerDartMethods: &methodPointer->invokeModule"<< &methodPointer->invokeModule << std::endl;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodPointer: "<< methodPointer << std::endl;
+    KRAKEN_LOG(VERBOSE) << "registerDartMethods: methodPointer->initHTML "<< methodPointer->initHTML << std::endl;
 
 #if ENABLE_PROFILE
   methodPointer->getPerformanceEntries = reinterpret_cast<GetPerformanceEntries>(methodBytes[i++]);

@@ -159,17 +159,18 @@ void evaluateScripts(int contextId, String code, String url, int line) {
 }
 
 // Register initJsEngine
-typedef Native_InitJSContextPool = Void Function(Int32 poolSize);
-typedef Dart_InitJSContextPool = void Function(int poolSize);
+typedef Native_InitJSContextPool = Int32 Function(Int32 isolateHash,Int32 poolSize);
+typedef Dart_InitJSContextPool = int Function(int isolateHash, int poolSize);
 
 final Dart_InitJSContextPool _initJSContextPool =
     nativeDynamicLibrary.lookup<NativeFunction<Native_InitJSContextPool>>('initJSContextPool').asFunction();
 
-void initJSContextPool(int poolSize) {
+int initJSContextPool(int poolSize) {
   if(kDebugMode) {
     print("KrakenTy initJSContextPool poolSize[$poolSize]");
   }
-  _initJSContextPool(poolSize);
+  int isolateHash = Isolate.current.hashCode;
+  return _initJSContextPool(isolateHash, poolSize);
 }
 
 typedef Native_DisposeContext = Void Function(Int32 contextId);

@@ -84,7 +84,7 @@ typedef void (*Task)(void *);
 typedef void (*ConsoleMessageHandler)(void* ctx, const std::string &message, int logLevel);
 
 KRAKEN_EXPORT_C
-void initJSContextPool(int poolSize);
+int32_t initJSContextPool(int32_t isolateHash, int poolSize);
 KRAKEN_EXPORT_C
 void disposeContext(int32_t contextId);
 KRAKEN_EXPORT_C

@@ -36,7 +36,7 @@ int initBridge() {
     Future.microtask(() {
       // Port flutter's frame callback into bridge.
       SchedulerBinding.instance.addPersistentFrameCallback((_) {
-        assert(contextId != -1);
+        // assert(contextId != -1);
         flushUICommand();
         flushUICommandCallback();
       });
@@ -44,9 +44,9 @@ int initBridge() {
   }
 
   if (_firstView) {
-    initJSContextPool(kKrakenJSBridgePoolSize);
+    contextId =  initJSContextPool(kKrakenJSBridgePoolSize);
     _firstView = false;
-    contextId = 0;
+    // contextId = 0;
   } else {
     contextId = allocateNewContext();
     if (contextId == -1) {

@@ -388,5 +388,8 @@ void registerDartMethodsToCpp() {
   Pointer<Uint64> bytes = allocate<Uint64>(count: _dartNativeMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
   nativeMethodList.setAll(0, _dartNativeMethods);
+  print('nativeMethodList[0]' + nativeMethodList[0].toString());
+  print('_dartNativeMethods[0]' + _dartNativeMethods[0].toString());
+  print('_nativeInvokeModule.address' + _nativeInvokeModule.address.toString());
   _registerDartMethods(Isolate.current.hashCode, bytes, _dartNativeMethods.length);
 }

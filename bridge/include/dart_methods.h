@@ -103,7 +103,7 @@ void registerTestEnvDartMethods(uint64_t *methodBytes, int32_t length);
 #endif
 
 KRAKEN_EXPORT
-std::shared_ptr<DartMethodPointer> getDartMethod();
+//std::shared_ptr<DartMethodPointer> getDartMethod();
 
 std::shared_ptr<DartMethodPointer> getDartMethod(void* owner);
 

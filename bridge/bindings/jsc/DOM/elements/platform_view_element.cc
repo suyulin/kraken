@@ -52,7 +52,7 @@ JSValueRef JSPlatformViewElement::call(JSContextRef ctx, JSObjectRef function, J
     }
 
     auto elementInstance = reinterpret_cast<JSPlatformViewElement::PlatformViewElementInstance *>(JSObjectGetPrivate(thisObject));
-    getDartMethod()->flushUICommand();
+    getDartMethod(elementInstance->context->getOwner())->flushUICommand();
     if (elementInstance->nativePlatformViewElement->call == nullptr) {
         KRAKEN_LOG(ERROR) << "Failed to execute call(): dart method is nullptr.";
         return nullptr;

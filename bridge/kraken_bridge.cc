@@ -44,7 +44,7 @@
 
 // this is not thread safe
 std::atomic<bool> inited{false};
-std::atomic<int32_t> poolIndex{0};
+std::atomic<int32_t> poolIndex{-1};
 int maxPoolSize = 0;
 kraken::JSBridge **contextPool;
 Screen screen;
@@ -56,8 +56,9 @@ std::__thread_id getUIThreadId() {
 }
 
 void printError(int32_t contextId, const char* errmsg) {
-  if (kraken::getDartMethod()->onJsError != nullptr) {
-    kraken::getDartMethod()->onJsError(contextId, errmsg);
+    kraken::JSBridge* bridge = static_cast<kraken::JSBridge* >(getJSContext(contextId));
+  if (kraken::getDartMethod(bridge)->onJsError != nullptr) {
+    kraken::getDartMethod(bridge)->onJsError(contextId, errmsg);
   }
   KRAKEN_LOG(ERROR) << errmsg << std::endl;
 }
@@ -84,22 +85,30 @@ int32_t searchForAvailableContextId() {
 
 } // namespace
 
-void initJSContextPool(int32_t isolateHash, int poolSize) {
-  uiThreadId = std::this_thread::get_id();
+int32_t initJSContextPool(int32_t isolateHash, int poolSize) {
+    uiThreadId = std::this_thread::get_id();
     KRAKEN_LOG(VERBOSE) << "initJSContextPool" << inited << std::endl;
+    KRAKEN_LOG(VERBOSE) << "initJSContextPool isolateHash::--> " << isolateHash << std::endl;
+    KRAKEN_LOG(VERBOSE) << "initJSContextPool uiThreadId::--> " << uiThreadId << std::endl;
     // When dart hot restarted, should dispose previous bridge and clear task message queue.
-  if (inited) {
-      disposeAllBridge();
-    foundation::UICommandBuffer::instance(0)->clear();
-  };
-  contextPool = new kraken::JSBridge *[poolSize];
-  for (int i = 1; i < poolSize; i++) {
-    contextPool[i] = nullptr;
-  }
+    if (!inited) {
+//        if (inited) {
+//            disposeAllBridge();
+//            foundation::UICommandBuffer::instance(0)->isolateHash = isolateHash;
+//            foundation::UICommandBuffer::instance(0)->clear();
+//        };
+        contextPool = new kraken::JSBridge *[poolSize];
+        for (int i = 1; i < poolSize; i++) {
+            contextPool[i] = nullptr;
+        }
 
-  contextPool[0] = new kraken::JSBridge(isolateHash, 0, printError);
-  inited = true;
-  maxPoolSize = poolSize;
+        inited = true;
+        maxPoolSize = poolSize;
+    }
+
+    poolIndex++;
+      contextPool[poolIndex] = new kraken::JSBridge(isolateHash, poolIndex, printError);
+    return poolIndex;
 }
 
 void disposeContext(int32_t contextId) {
@@ -128,7 +137,8 @@ int32_t allocateNewContext(int32_t isolateHash) {
                                                 .c_str());
 
   auto context = new kraken::JSBridge(isolateHash, poolIndex, printError);
-  contextPool[poolIndex] = context;
+    foundation::UICommandBuffer::instance(poolIndex)->isolateHash = isolateHash;
+    contextPool[poolIndex] = context;
   return poolIndex;
 }
 
@@ -137,7 +147,12 @@ int32_t isContextValid(int32_t contextId) {
 }
 
 void *getJSContext(int32_t contextId) {
-  assert(checkContext(contextId) && "getJSContext: contextId is not valid.");
+    KRAKEN_LOG(VERBOSE) << "getJSContext:: contextId " << contextId << std::endl;
+    KRAKEN_LOG(VERBOSE) << "getJSContext:: contextPool[contextId] " << contextPool[contextId] << std::endl;
+    kraken::JSBridge* bridge = static_cast<kraken::JSBridge* >(contextPool[contextId]);
+    KRAKEN_LOG(VERBOSE) << "getJSContext:: contextPool[contextId] bridge" << bridge << std::endl;
+
+//    assert(checkContext(contextId) && "getJSContext: contextId is not valid.");
   return contextPool[contextId];
 }
 
