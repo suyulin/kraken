@@ -167,6 +167,8 @@ if ($ENV{KRAKEN_JS_ENGINE} MATCHES "jsc")
     bindings/jsc/KOM/method_channel.h
     bridge_jsc.cc
     bridge_jsc.h
+    jsbridge_runtime.cc
+    jsbridge_runtime.h
   )
 elseif($ENV{KRAKEN_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DKRAKEN_QUICK_JS_ENGINE=1)

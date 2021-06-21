@@ -8,11 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.openkraken.kraken.Kraken;
-
 import io.flutter.embedding.android.FlutterActivity;
 
-public class MainActivity extends FlutterActivity {
+public class StandAloneActivity extends FlutterActivity {
 
   private static int sAutoJump = 0;
 
@@ -28,17 +26,17 @@ public class MainActivity extends FlutterActivity {
       @Override
       public void onClick(View v) {
         Intent intent = new Intent();
-        intent.setClass(MainActivity.this, StandAloneActivity.class);
+        intent.setClass(StandAloneActivity.this, StandAloneActivity.class);
         startActivity(intent);
       }
     });
 
-    if(sAutoJump< 3) {
+    if(sAutoJump< 2) {
       new Handler(getMainLooper()).postDelayed(new Runnable() {
         @Override
         public void run() {
           Intent intent = new Intent();
-          intent.setClass(MainActivity.this, StandAloneActivity.class);
+          intent.setClass(StandAloneActivity.this, StandAloneActivity.class);
           startActivity(intent);
           sAutoJump++;
         }

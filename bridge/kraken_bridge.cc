@@ -48,6 +48,7 @@ std::atomic<int32_t> poolIndex{-1};
 int maxPoolSize = 0;
 kraken::JSBridge **contextPool;
 Screen screen;
+std::recursive_mutex bridge_runtime_mutex_;
 
 std::__thread_id uiThreadId;
 
@@ -86,6 +87,7 @@ int32_t searchForAvailableContextId() {
 } // namespace
 
 int32_t initJSContextPool(int32_t isolateHash, int poolSize) {
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
     uiThreadId = std::this_thread::get_id();
     KRAKEN_LOG(VERBOSE) << "initJSContextPool" << inited << std::endl;
     KRAKEN_LOG(VERBOSE) << "initJSContextPool isolateHash::--> " << isolateHash << std::endl;
@@ -112,6 +114,7 @@ int32_t initJSContextPool(int32_t isolateHash, int poolSize) {
 }
 
 void disposeContext(int32_t contextId) {
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
     KRAKEN_LOG(VERBOSE) << "disposeContext" << contextId << std::endl;
     assert(contextId < maxPoolSize);
   if (contextPool[contextId] == nullptr) return;
@@ -143,10 +146,12 @@ int32_t allocateNewContext(int32_t isolateHash) {
 }
 
 int32_t isContextValid(int32_t contextId) {
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
     return inited && contextId < maxPoolSize && contextPool[contextId] != nullptr;
 }
 
 void *getJSContext(int32_t contextId) {
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
     KRAKEN_LOG(VERBOSE) << "getJSContext:: contextId " << contextId << std::endl;
     KRAKEN_LOG(VERBOSE) << "getJSContext:: contextPool[contextId] " << contextPool[contextId] << std::endl;
     kraken::JSBridge* bridge = static_cast<kraken::JSBridge* >(contextPool[contextId]);
@@ -157,11 +162,14 @@ void *getJSContext(int32_t contextId) {
 }
 
 bool checkContext(int32_t contextId) {
-  return inited && contextId < maxPoolSize && contextPool[contextId] != nullptr;
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
+    return inited && contextId < maxPoolSize && contextPool[contextId] != nullptr;
 }
 
 bool checkContext(int32_t contextId, void *context) {
-  if (contextPool[contextId] == nullptr) return false;
+//    std::lock_guard<std::recursive_mutex>
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
+    if (contextPool[contextId] == nullptr) return false;
   auto bridge = static_cast<kraken::JSBridge *>(getJSContext(contextId));
   return bridge->getContext().get() == context;
 }
@@ -173,7 +181,8 @@ void evaluateScripts(int32_t contextId, NativeString *code, const char *bundleFi
 }
 
 void reloadJsContext(int32_t contextId) {
-  assert(checkContext(contextId) && "reloadJSContext: contextId is not valid");
+    std::lock_guard<std::recursive_mutex> guard(bridge_runtime_mutex_);
+    assert(checkContext(contextId) && "reloadJSContext: contextId is not valid");
   auto bridgePtr = getJSContext(contextId);
   auto context = static_cast<kraken::JSBridge *>(bridgePtr);
   auto newContext = new kraken::JSBridge(context->isolateHash, contextId, printError);

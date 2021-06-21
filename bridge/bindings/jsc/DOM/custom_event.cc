@@ -10,7 +10,9 @@
 namespace kraken::binding::jsc {
 
 void bindCustomEvent(std::unique_ptr<JSContext> &context) {
-  auto CustomEvent = JSCustomEvent::instance(context.get());
+    KRAKEN_LOG(VERBOSE) << "bindCustomEvent  context::--> " << context << std::endl;
+    KRAKEN_LOG(VERBOSE) << "bindCustomEvent  context.get()::--> " << context.get() << std::endl;
+    auto CustomEvent = JSCustomEvent::instance(context.get());
   JSC_GLOBAL_SET_PROPERTY(context, "CustomEvent", CustomEvent->classObject);
 };
 
