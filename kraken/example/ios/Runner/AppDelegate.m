@@ -81,6 +81,7 @@
 
     
     [self.window.rootViewController presentViewController:vc1 animated:YES completion:nil];
+    
 //    [self.window.rootViewController.navigationController pushViewController:vc1 animated:YES];
 //    ]
 //    FlutterViewController *flutterViewController =
