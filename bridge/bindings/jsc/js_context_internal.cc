@@ -216,10 +216,15 @@ void buildUICommandArgs(std::string &key, std::string &value, NativeString &args
 
 NativeString *stringToNativeString(std::string &string) {
   std::u16string utf16;
-  fromUTF8(string, utf16);
-  NativeString tmp{};
+    KRAKEN_LOG(VERBOSE) << "tylorvan -> stringToNativeString  stringToNativeString(std::string &string) string:: " << string << std::endl;
+    fromUTF8(string, utf16);
+    KRAKEN_LOG(VERBOSE) << "tylorvan -> stringToNativeString  stringToNativeString(std::string &string) utf16:: " << utf16.c_str() << std::endl;
+
+    NativeString tmp{};
   tmp.string = reinterpret_cast<const uint16_t *>(utf16.c_str());
-  tmp.length = utf16.size();
+    KRAKEN_LOG(VERBOSE) << "tylorvan -> stringToNativeString  stringToNativeString(std::string &string) tmp.string:: " << tmp.string << std::endl;
+
+    tmp.length = utf16.size();
   return tmp.clone();
 }
 

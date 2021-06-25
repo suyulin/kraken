@@ -88,7 +88,7 @@ JSValueRef matchImageSnapshot(JSContextRef ctx, JSObjectRef function, JSObjectRe
     return nullptr;
   }
 
-  if (getDartMethod()->matchImageSnapshot == nullptr) {
+  if (getDartMethod(context->getOwner())->matchImageSnapshot == nullptr) {
     binding::jsc::throwJSError(
       ctx, "Failed to execute '__kraken_match_image_snapshot__': dart method (matchImageSnapshot) is not registered.",
       exception);
@@ -122,7 +122,8 @@ JSValueRef matchImageSnapshot(JSContextRef ctx, JSObjectRef function, JSObjectRe
   bridge->bridgeCallback->registerCallback<void>(
     std::move(callbackContext),
     [&blob, &nativeString, &fn](BridgeCallback::Context *callbackContext, int32_t contextId) {
-      getDartMethod()->matchImageSnapshot(callbackContext, contextId, blob->bytes(), blob->size(), &nativeString, fn);
+        auto &_context = callbackContext->_context;
+        getDartMethod(_context.getOwner())->matchImageSnapshot(callbackContext, contextId, blob->bytes(), blob->size(), &nativeString, fn);
     });
 
   return nullptr;
@@ -130,26 +131,26 @@ JSValueRef matchImageSnapshot(JSContextRef ctx, JSObjectRef function, JSObjectRe
 
 JSValueRef environment(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount,
                        const JSValueRef *arguments, JSValueRef *exception) {
-  if (getDartMethod()->environment == nullptr) {
+    auto context = static_cast<binding::jsc::JSContext *>(JSObjectGetPrivate(function));
+    if (getDartMethod(context->getOwner())->environment == nullptr) {
     binding::jsc::throwJSError(ctx, "Failed to execute '__kraken_environment__': dart method (environment) is not registered.",
                     exception);
     return nullptr;
   }
-  const char *env = getDartMethod()->environment();
+  const char *env = getDartMethod(context->getOwner())->environment();
   JSStringRef envStringRef = JSStringCreateWithUTF8CString(env);
   return JSValueMakeFromJSONString(ctx, envStringRef);
 }
 
 JSValueRef simulatePointer(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount,
                            const JSValueRef *arguments, JSValueRef *exception) {
-  if (getDartMethod()->simulatePointer == nullptr) {
+    auto context = static_cast<binding::jsc::JSContext *>(JSObjectGetPrivate(function));
+    if (getDartMethod(context->getOwner())->simulatePointer == nullptr) {
     binding::jsc::throwJSError(ctx,
                     "Failed to execute '__kraken_simulate_pointer__': dart method(simulatePointer) is not registered.",
                     exception);
     return nullptr;
   }
-
-  auto context = static_cast<binding::jsc::JSContext *>(JSObjectGetPrivate(function));
 
   const JSValueRef &firstArgsValueRef = arguments[0];
   if (!JSValueIsObject(ctx, firstArgsValueRef)) {
@@ -182,7 +183,7 @@ JSValueRef simulatePointer(JSContextRef ctx, JSObjectRef function, JSObjectRef t
     mousePointerList[i] = mouse;
   }
 
-  getDartMethod()->simulatePointer(mousePointerList, length);
+  getDartMethod(context->getOwner())->simulatePointer(mousePointerList, length);
 
   delete[] mousePointerList;
 
@@ -191,7 +192,9 @@ JSValueRef simulatePointer(JSContextRef ctx, JSObjectRef function, JSObjectRef t
 
 JSValueRef simulateKeyPress(JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount,
                             const JSValueRef *arguments, JSValueRef *exception) {
-  if (getDartMethod()->simulateKeyPress == nullptr) {
+    auto context = static_cast<binding::jsc::JSContext *>(JSObjectGetPrivate(function));
+
+    if (getDartMethod(context->getOwner())->simulateKeyPress == nullptr) {
     binding::jsc::throwJSError(ctx,
                     "Failed to execute '__kraken_simulate_keypress__': dart method(simulateKeyPress) is not registered.",
                     exception);
@@ -209,7 +212,7 @@ JSValueRef simulateKeyPress(JSContextRef ctx, JSObjectRef function, JSObjectRef 
   NativeString nativeString{};
   nativeString.length = JSStringGetLength(charsStringRef);
   nativeString.string = JSStringGetCharactersPtr(charsStringRef);
-  getDartMethod()->simulateKeyPress(&nativeString);
+  getDartMethod(context->getOwner())->simulateKeyPress(&nativeString);
   JSStringRelease(charsStringRef);
   return nullptr;
 }

@@ -81,7 +81,7 @@ EventInstance::EventInstance(JSEvent *jsEvent, NativeEvent *nativeEvent)
   : Instance(jsEvent), nativeEvent(nativeEvent) {}
 
 EventInstance::EventInstance(JSEvent *jsEvent, std::string eventType, JSValueRef eventInitValueRef, JSValueRef *exception) : Instance(jsEvent) {
-  nativeEvent = new NativeEvent(stringToNativeString(eventType));
+    nativeEvent = new NativeEvent(stringToNativeString(eventType));
   auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
   nativeEvent->timeStamp = ms.count();
 

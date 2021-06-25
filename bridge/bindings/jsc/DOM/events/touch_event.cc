@@ -26,7 +26,7 @@ JSObjectRef JSTouchEvent::instanceConstructor(JSContextRef ctx, JSObjectRef cons
     throwJSError(ctx, "Failed to construct 'JSTouchEvent': 1 argument required, but only 0 present.", exception);
     return nullptr;
   }
-
+    KRAKEN_LOG(VERBOSE) << "JSTouchEvent::instanceConstructor(JSContextRef ctx, JSObjectRef constructor, size_t argumentCount,const JSValueRef *arguments, JSValueRef *exception)" << std::endl;
   JSStringRef dataStringRef = JSValueToStringCopy(ctx, arguments[0], exception);
   auto event = new TouchEventInstance(this, dataStringRef);
   return event->object;
@@ -45,7 +45,9 @@ TouchEventInstance::TouchEventInstance(JSTouchEvent *jsTouchEvent, NativeTouchEv
 
 TouchEventInstance::TouchEventInstance(JSTouchEvent *jsTouchEvent, JSStringRef data)
   : EventInstance(jsTouchEvent, "touch", nullptr, nullptr) {
-  nativeTouchEvent = new NativeTouchEvent(nativeEvent);
+    KRAKEN_LOG(VERBOSE) << "TouchEventInstance(JSTouchEvent *jsTouchEvent, JSStringRef data)  context::--> " << context << std::endl;
+    KRAKEN_LOG(VERBOSE) << "TouchEventInstance(JSTouchEvent *jsTouchEvent, JSStringRef data)  nativeEvent->type->length::--> " << nativeEvent->type->length << std::endl;
+    nativeTouchEvent = new NativeTouchEvent(nativeEvent);
 }
 
 JSValueRef TouchEventInstance::getProperty(std::string &name, JSValueRef *exception) {

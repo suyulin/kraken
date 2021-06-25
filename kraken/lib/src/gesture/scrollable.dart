@@ -147,6 +147,9 @@ class KrakenScrollable with _CustomTickerProviderStateMixin implements ScrollCon
 
   // Used in the Arena to judge whether the vertical trag gesture can trigger the current container to scroll.
   bool _isAcceptedVerticalDrag (AxisDirection direction) {
+    if(true){
+      return true;
+    }
     double pixels = (_drag as ScrollDragController).pixels;
     double maxScrollExtent = (_drag as ScrollDragController).maxScrollExtent;
     double minScrollExtent = (_drag as ScrollDragController).minScrollExtent;
@@ -155,6 +158,9 @@ class KrakenScrollable with _CustomTickerProviderStateMixin implements ScrollCon
 
   // Used in the Arena to judge whether the horizontal trag gesture can trigger the current container to scroll.
   bool _isAcceptedHorizontalDrag (AxisDirection direction) {
+    if(true){
+      return true;
+    }
     double pixels = (_drag as ScrollDragController).pixels;
     double maxScrollExtent = (_drag as ScrollDragController).maxScrollExtent;
     double minScrollExtent = (_drag as ScrollDragController).minScrollExtent;
