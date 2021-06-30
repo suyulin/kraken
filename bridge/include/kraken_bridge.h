@@ -58,7 +58,8 @@ enum UICommand {
   setStyle,
   setProperty,
   removeProperty,
-  cloneNode
+  cloneNode,
+  removeEvent,
 };
 
 struct KRAKEN_EXPORT UICommandItem {

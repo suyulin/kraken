@@ -19,7 +19,6 @@ class Document extends Node {
   @override
   void addEvent(String eventName) {
     super.addEvent(eventName);
-    if (eventHandlers.containsKey(eventName)) return; // Only listen once.
-    addEventListener(eventName, _handleEvent);
+    documentElement.addEventListener(eventName, _handleEvent);
   }
 }

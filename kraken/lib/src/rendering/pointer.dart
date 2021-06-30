@@ -14,6 +14,8 @@ typedef GestureCallback = void Function(Event);
 
 typedef MouseEventListener = void Function(String, { PointerDownEvent down, PointerUpEvent up });
 
+typedef GetEventHandlers = Map<String, List<EventHandler>> Function();
+
 mixin RenderPointerListenerMixin on RenderBox {
   /// Called when a pointer comes into contact with the screen (for touch
   /// pointers), or has its button pressed (for mouse pointers) at this widget's
@@ -44,33 +46,8 @@ mixin RenderPointerListenerMixin on RenderBox {
 
   GestureCallback onLongPress;
 
-  void onPanStart(DragStartDetails details) {
-    onPan(GestureEvent(EVENT_PAN, GestureEventInit( state: EVENT_STATE_START, deltaX: details.globalPosition.dx, deltaY: details.globalPosition.dy )));
-  }
+  GetEventHandlers getEventHandlers;
 
-  void onPanUpdate(DragUpdateDetails details) {
-    onPan(GestureEvent(EVENT_PAN, GestureEventInit( state: EVENT_STATE_UPDATE, deltaX: details.globalPosition.dx, deltaY: details.globalPosition.dy )));
-  }
-
-  void onPanEnd(DragEndDetails details) {
-    onPan(GestureEvent(EVENT_PAN, GestureEventInit( state: EVENT_STATE_END, velocityX: details.velocity.pixelsPerSecond.dx, velocityY: details.velocity.pixelsPerSecond.dy )));
-  }
-
-  void onScaleStart(ScaleStartDetails details) {
-    onScale(GestureEvent(EVENT_SCALE, GestureEventInit( state: EVENT_STATE_START )));
-  }
-
-  void onScaleUpdate(ScaleUpdateDetails details) {
-    onScale(GestureEvent(EVENT_SCALE, GestureEventInit( state: EVENT_STATE_UPDATE, rotation: details.rotation, scale: details.scale )));
-  }
-
-  void onScaleEnd(ScaleEndDetails details) {
-    onScale(GestureEvent(EVENT_SCALE, GestureEventInit( state: EVENT_STATE_END )));
-  }
-
-  void onLongPressEnd(LongPressEndDetails details) {
-    onLongPress(GestureEvent(EVENT_LONG_PRESS, GestureEventInit(deltaX: details.globalPosition.dx, deltaY: details.globalPosition.dy )));
-  }
 
   @override
   void handleEvent(PointerEvent event, HitTestEntry entry) {
@@ -80,20 +57,7 @@ mixin RenderPointerListenerMixin on RenderBox {
     /// pointers), or has its button pressed (for mouse pointers) at this widget's
     /// location.
     if (event is PointerDownEvent) {
-      if (entry.target is RenderBoxModel) {
-        GestureManager.instance().addTargetToList(entry.target as RenderBoxModel);
-      }
+      GestureManager.instance().addTargetToList(this);
     }
-
-    if (onPointerDown != null && event is PointerDownEvent)
-      return onPointerDown(event);
-    if (onPointerMove != null && event is PointerMoveEvent)
-      return onPointerMove(event);
-    if (onPointerUp != null && event is PointerUpEvent)
-      return onPointerUp(event);
-    if (onPointerCancel != null && event is PointerCancelEvent)
-      return onPointerCancel(event);
-    if (onPointerSignal != null && event is PointerSignalEvent)
-      return onPointerSignal(event);
   }
 }

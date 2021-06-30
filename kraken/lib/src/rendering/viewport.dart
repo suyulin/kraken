@@ -6,11 +6,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/gestures.dart';
 import 'package:kraken/launcher.dart';
 import 'package:kraken/gesture.dart';
+import 'package:kraken/rendering.dart';
 import 'dart:ui';
 import 'package:meta/meta.dart';
 
 class RenderViewportBox extends RenderProxyBox
-    with RenderObjectWithControllerMixin {
+    with RenderObjectWithControllerMixin, RenderPointerListenerMixin  {
   RenderViewportBox({
     @required Size viewportSize,
     RenderBox child,
@@ -33,6 +34,9 @@ class RenderViewportBox extends RenderProxyBox
 
   Size _viewportSize;
   Size get viewportSize => _viewportSize;
+
+  GetEventHandlers getEventHandlers;
+
   set viewportSize(Size value) {
     if (value != null && value != _viewportSize) {
       _viewportSize = value;
@@ -74,11 +78,15 @@ class RenderViewportBox extends RenderProxyBox
   void handleEvent(PointerEvent event, HitTestEntry entry) {
     super.handleEvent(event, entry);
     if (event is PointerDownEvent) {
+      // Add viewport to hitTest list.
+      GestureManager.instance().addTargetToList(this);
       _verticalDragGestureRecognizer.addPointer(event);
-      GestureManager.instance().addPointer(event);
     } else if (event is PointerUpEvent) {
       GestureManager.instance().clearTargetList();
     }
+
+    // Add pointer to GestureManager.
+    GestureManager.instance().addPointer(event);
   }
 
   void paint(PaintingContext context, Offset offset) {

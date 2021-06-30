@@ -103,6 +103,7 @@ void invokeModuleEvent(int contextId, String moduleName, Event event, String ext
 bool _jsContextValid(int contextId) => contextId != null && contextId >= 0 && isContextValid(contextId);
 
 void emitUIEvent(int contextId, Pointer<NativeEventTarget> nativePtr, Event event) {
+  print("emitUIEvent event: " + event.toString());
   if (_jsContextValid(contextId)) {
     Pointer<NativeEventTarget> nativeEventTarget = nativePtr;
     Dart_DispatchEvent dispatchEvent = nativeEventTarget.ref.dispatchEvent.asFunction();
@@ -265,6 +266,7 @@ enum UICommandType {
   setProperty,
   removeProperty,
   cloneNode,
+  removeEvent,
 }
 
 class UICommandItem extends Struct {
@@ -453,6 +455,9 @@ void flushUICommand() {
             break;
           case UICommandType.addEvent:
             controller.view.addEvent(id, command.args[0]);
+            break;
+          case UICommandType.removeEvent:
+            controller.view.removeEvent(id, command.args[0]);
             break;
           case UICommandType.insertAdjacentNode:
             int childId = int.parse(command.args[0]);
