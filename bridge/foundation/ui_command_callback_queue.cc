@@ -7,8 +7,10 @@
 
 namespace foundation {
 
+std::recursive_mutex ui_command_callback_mutex_;
 UICommandCallbackQueue *UICommandCallbackQueue::instance() {
-  static UICommandCallbackQueue *queue = nullptr;
+    std::lock_guard<std::recursive_mutex> guard(ui_command_callback_mutex_);
+    static UICommandCallbackQueue *queue = nullptr;
 
   if (queue == nullptr) {
     queue = new UICommandCallbackQueue();
@@ -18,14 +20,16 @@ UICommandCallbackQueue *UICommandCallbackQueue::instance() {
 }
 
 void UICommandCallbackQueue::flushCallbacks() {
-  for (auto &item : queue) {
+    std::lock_guard<std::recursive_mutex> guard(ui_command_callback_mutex_);
+    for (auto &item : queue) {
     item.callback(item.data);
   }
   queue.clear();
 }
 
 void UICommandCallbackQueue::registerCallback(const Callback &callback, void *data) {
-  CallbackItem item{callback, data};
+    std::lock_guard<std::recursive_mutex> guard(ui_command_callback_mutex_);
+    CallbackItem item{callback, data};
   queue.emplace_back(item);
 }
 
