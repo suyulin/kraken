@@ -30,7 +30,7 @@ Future<dynamic> _invokeMethodFromJavaScript(KrakenController controller, String 
   if (controller == null || controller.methodChannel == null) {
     return Future.error(FlutterError(METHOD_CHANNEL_NOT_INITIALIZED));
   }
-  return controller.methodChannel._invokeMethodFromJavaScript(JSContext(controller.bundleURL, '${controller.view.contextId}'), method, args);
+  return controller.methodChannel?._invokeMethodFromJavaScript(JSContext(controller.bundleURL, '${controller.view.contextId}'), method, args);
 }
 
 const METHOD_CHANNEL_NAME = 'MethodChannel';
@@ -38,7 +38,7 @@ const METHOD_CHANNEL_NAME = 'MethodChannel';
 class MethodChannelModule extends BaseModule {
   @override
   String get name => METHOD_CHANNEL_NAME;
-  MethodChannelModule(ModuleManager moduleManager) : super(moduleManager);
+  MethodChannelModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
   void dispose() {}
@@ -46,10 +46,10 @@ class MethodChannelModule extends BaseModule {
   @override
   String invoke(String method, dynamic params, callback) {
     if (method == 'invokeMethod') {
-      _invokeMethodFromJavaScript(moduleManager.controller, params[0], params[1]).then((result) {
+      _invokeMethodFromJavaScript(moduleManager!.controller, params[0], params[1]).then((result) {
         callback(data: result);
       }).catchError((e, stack) {
-        callback(errmsg: '$e\n$stack');
+        callback(error: '$e\n$stack');
       });
     }
     return '';
@@ -59,15 +59,15 @@ class MethodChannelModule extends BaseModule {
 void setJSMethodCallCallback(KrakenController controller) {
   if (controller.methodChannel == null) return;
 
-  controller.methodChannel._onJSMethodCall = (JSContext jsContext, String method, dynamic arguments) async {
+  controller.methodChannel!._onJSMethodCall = (JSContext jsContext, String method, dynamic arguments) async {
     controller.module.moduleManager.emitModuleEvent(METHOD_CHANNEL_NAME, data: [method, arguments]);
   };
 }
 
 class KrakenMethodChannel {
-  MethodCallCallback _onJSMethodCallCallback;
+  MethodCallCallback? _onJSMethodCallCallback;
 
-  set _onJSMethodCall(MethodCallCallback value) {
+  set _onJSMethodCall(MethodCallCallback? value) {
     assert(value != null);
     _onJSMethodCallCallback = value;
   }
@@ -77,7 +77,7 @@ class KrakenMethodChannel {
   static void setJSMethodCallCallback(KrakenController controller) {
     if (controller.methodChannel == null) return;
 
-    controller.methodChannel._onJSMethodCall = (JSContext jsContext,String method, dynamic arguments) async {
+    controller.methodChannel!._onJSMethodCall = (JSContext jsContext,String method, dynamic arguments) async {
       controller.module.moduleManager.emitModuleEvent(METHOD_CHANNEL_NAME, data: [method, arguments]);
     };
   }
@@ -96,21 +96,21 @@ class KrakenJavaScriptChannel extends KrakenMethodChannel {
     if (_onJSMethodCallCallback == null) {
       return null;
     }
-    return _onJSMethodCallCallback(jsContext, method, arguments);
+    return _onJSMethodCallCallback!(jsContext, method, arguments);
   }
 
-  MethodCallCallback _methodCallCallback;
+  MethodCallCallback? _methodCallCallback;
 
-  MethodCallCallback get methodCallCallback => _methodCallCallback;
+  MethodCallCallback? get methodCallCallback => _methodCallCallback;
 
-  set onMethodCall(MethodCallCallback value) {
+  set onMethodCall(MethodCallCallback? value) {
     assert(value != null);
     _methodCallCallback = value;
   }
 
   Future<dynamic> _invokeMethodFromJavaScript(JSContext jsContext, String method, List arguments) {
     if (_methodCallCallback == null) return Future.value(null);
-    return _methodCallCallback(jsContext, method, arguments);
+    return _methodCallCallback!(jsContext, method, arguments);
   }
 }
 
@@ -120,12 +120,14 @@ class KrakenNativeChannel extends KrakenMethodChannel {
   static MethodChannel _nativeChannel = MethodChannel('kraken')
     ..setMethodCallHandler((call) async {
       String method = call.method;
-      KrakenController controller = KrakenController.getControllerOfJSContextId(0);
+      KrakenController? controller = KrakenController.getControllerOfJSContextId(0);
+
+      if (controller == null) return;
 
       if ('reload' == method) {
         await controller.reload();
-      } else if (controller.methodChannel._onJSMethodCallCallback != null) {
-        return controller.methodChannel._onJSMethodCallCallback(JSContext(controller.bundleURL, '${controller.view.contextId}'), method, call.arguments);
+      } else if (controller.methodChannel!._onJSMethodCallCallback != null) {
+        return controller.methodChannel!._onJSMethodCallCallback!(JSContext(controller.bundleURL, '${controller.view.contextId}'), method, call.arguments);
       }
 
       return Future<dynamic>.value(null);
@@ -147,9 +149,9 @@ class KrakenNativeChannel extends KrakenMethodChannel {
     return _nativeChannel.invokeMethod('invokeMethod', argsWrap);
   }
 
-  Future<String> getUrl() async {
+  Future<String?> getUrl() async {
     // Maybe url of zip bundle or js bundle
-    String url = await _nativeChannel.invokeMethod('getUrl');
+    String? url = await _nativeChannel.invokeMethod('getUrl');
 
     // @NOTE(zhuoling.lcl): Android plugin protocol cannot return `null` directly, which
     // will case method channel invoke failed with exception, use empty

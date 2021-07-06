@@ -4,11 +4,9 @@ import 'package:kraken/bridge.dart';
 
 class UiCommandManager {
   factory UiCommandManager() => _ins;
-  Map<int, JSContextCommands> _commandsMap;
+  Map<int, JSContextCommands> _commandsMap = Map();
 
-  UiCommandManager._() {
-    _commandsMap = Map();
-  }
+  UiCommandManager._();
 
   static final UiCommandManager _ins = UiCommandManager._();
 
@@ -16,15 +14,15 @@ class UiCommandManager {
 
   addCommand(int jsContextId, int targetId, UICommand command) {
     _commandsMap.putIfAbsent(jsContextId, () => JSContextCommands());
-    JSContextCommands commands = _commandsMap[jsContextId];
+    JSContextCommands commands = _commandsMap[jsContextId]!;
     commands._addTargetCommand(targetId, command);
   }
 
-  JSContextCommands flushCommand(int jsContextId) {
+  JSContextCommands? flushCommand(int? jsContextId) {
     if (jsContextId == null) {
       return null;
     }
-    JSContextCommands commands = _commandsMap[jsContextId];
+    JSContextCommands commands = _commandsMap[jsContextId]!;
     if (_commandsMap.containsKey(jsContextId)) {
       _commandsMap.remove(jsContextId);
     }
@@ -35,7 +33,7 @@ class UiCommandManager {
 }
 
 class JSContextCommands {
-  List<int> targetIds = List();
+  List<int> targetIds = List.empty(growable: true);
 
   Map<int, List<MergedCommands>> cacheCommands = Map();
 
@@ -45,17 +43,17 @@ class JSContextCommands {
     }
 
     bool canMerge = command.type != UICommandType.insertAdjacentNode;
-    cacheCommands.putIfAbsent(targetId, () => List());
-    MergedCommands mergedCommands;
+    cacheCommands.putIfAbsent(targetId, () =>  List.empty(growable: true));
+    MergedCommands? mergedCommands;
     if (canMerge == true) {
       bool merged = false;
       if (targetIds.contains(targetId)) {
-        if (cacheCommands[targetId].length == 0) {
+        if (cacheCommands[targetId]!.length == 0) {
           mergedCommands = MergedCommands(targetId, canMerge: true,);
           mergedCommands.commands.add(command);
-          cacheCommands[targetId].add(mergedCommands);
+          cacheCommands[targetId]!.add(mergedCommands);
         } else {
-          List<MergedCommands> commandList = cacheCommands[targetId];
+          List<MergedCommands> commandList = cacheCommands[targetId]!;
           for (MergedCommands value in commandList) {
             if (value != null && value.canMerge == true) {
               mergedCommands = value;
@@ -67,7 +65,7 @@ class JSContextCommands {
           if(merged != true){
             mergedCommands = MergedCommands(targetId, canMerge: true,);
             mergedCommands.commands.add(command);
-            cacheCommands[targetId].add(mergedCommands);
+            cacheCommands[targetId]!.add(mergedCommands);
           }
         }
 
@@ -75,18 +73,18 @@ class JSContextCommands {
         merged = false;
         mergedCommands = MergedCommands(targetId, canMerge: true);
         mergedCommands.commands.add(command);
-        cacheCommands[targetId].add(mergedCommands);
+        cacheCommands[targetId]!.add(mergedCommands);
       }
 
       if (merged != true) {
         targetIds.add(targetId);
-        mergedCommands.targetIdIndex = targetIds.length -1;
+        mergedCommands!.targetIdIndex = targetIds.length -1;
       }
     } else {
       MergedCommands mergedCommands = MergedCommands(targetId, canMerge: false);
       mergedCommands.commands.add(command);
       mergedCommands.targetIdIndex = targetIds.length -1;
-      cacheCommands[targetId].add(mergedCommands);
+      cacheCommands[targetId]!.add(mergedCommands);
       targetIds.add(targetId);
     }
   }
@@ -120,15 +118,15 @@ class JSContextCommands {
 //    return uiCommand;
 //  }
 
-  List<UICommand> flushCommands(int target,int index) {
+  List<UICommand>? flushCommands(int? target, int? index) {
     if (target == null) {
       return null;
     }
-    List<UICommand> uiCommand = List();
-    List<MergedCommands> commands = cacheCommands[target];
-    for (int i = 0; i < commands.length; i++) {
-      MergedCommands element = commands[i];
-      if (element != null && element.targetIdIndex == index) {
+    List<UICommand> uiCommand = List.empty(growable: true);
+    List<MergedCommands>? commands = cacheCommands[target];
+    for (int i = 0; i < commands!.length; i++) {
+      MergedCommands? element = commands[i]!;
+      if (element.targetIdIndex == index) {
         uiCommand.addAll(element.commands);
         break;
       }
@@ -138,13 +136,12 @@ class JSContextCommands {
 }
 
 class MergedCommands {
-  int targetId;
-  List<UICommand> commands;
+  int? targetId;
+  late List<UICommand> commands;
   bool canMerge;
-  int targetIdIndex;
+  int? targetIdIndex;
 
-  MergedCommands(int targetId, {this.canMerge = true, this.targetIdIndex}) {
-    this.targetId = targetId;
-    commands = List();
+  MergedCommands(this.targetId, {this.canMerge = true, this.targetIdIndex}) {
+    commands = List.empty(growable: true);
   }
 }

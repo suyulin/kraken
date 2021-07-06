@@ -18,8 +18,8 @@ import 'package:kraken/bridge.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:test/test.dart';
-import 'package:flutter_test/flutter_test.dart';
 
+import 'test_input.dart';
 import 'platform.dart';
 import 'match_snapshots.dart';
 
@@ -34,27 +34,28 @@ import 'match_snapshots.dart';
 typedef Native_JSError = Void Function(Int32 contextId, Pointer<Utf8>);
 typedef JSErrorListener = void Function(String);
 
-List<JSErrorListener> _listenerList = List(10);
+List<JSErrorListener> _listenerList = List.filled(10, (String string) {
+  throw new Exception('unimplemented JS ErrorListener');
+});
 
 void addJSErrorListener(int contextId, JSErrorListener listener) {
   _listenerList[contextId] = listener;
 }
 
 void _onJSError(int contextId, Pointer<Utf8> charStr) {
-  if (_listenerList[contextId] == null) return;
-  String msg = Utf8.fromUtf8(charStr);
+  String msg = (charStr).toDartString();
   _listenerList[contextId](msg);
 }
 
 final Pointer<NativeFunction<Native_JSError>> _nativeOnJsError = Pointer.fromFunction(_onJSError);
 
-typedef Native_MatchImageSnapshotCallback = Void Function(Pointer<JSCallbackContext> callbackContext, Int32 contextId, Int8);
-typedef Dart_MatchImageSnapshotCallback = void Function(Pointer<JSCallbackContext> callbackContext, int contextId, int);
+typedef Native_MatchImageSnapshotCallback = Void Function(Pointer<Void> callbackContext, Int32 contextId, Int8);
+typedef Dart_MatchImageSnapshotCallback = void Function(Pointer<Void> callbackContext, int contextId, int);
 typedef Native_MatchImageSnapshot = Void Function(
-    Pointer<JSCallbackContext> callbackContext, Int32 contextId,
+    Pointer<Void> callbackContext, Int32 contextId,
     Pointer<Uint8>, Int32, Pointer<NativeString>, Pointer<NativeFunction<Native_MatchImageSnapshotCallback>>);
 
-void _matchImageSnapshot(Pointer<JSCallbackContext> callbackContext, int contextId, Pointer<Uint8> bytes, int size, Pointer<NativeString> snapshotNamePtr, Pointer<NativeFunction<Native_MatchImageSnapshotCallback>> pointer) {
+void _matchImageSnapshot(Pointer<Void> callbackContext, int contextId, Pointer<Uint8> bytes, int size, Pointer<NativeString> snapshotNamePtr, Pointer<NativeFunction<Native_MatchImageSnapshotCallback>> pointer) {
   Dart_MatchImageSnapshotCallback callback = pointer.asFunction();
   String filename = nativeStringToString(snapshotNamePtr);
   matchImageSnapshot(bytes.asTypedList(size), filename).then((value) {
@@ -64,17 +65,17 @@ void _matchImageSnapshot(Pointer<JSCallbackContext> callbackContext, int context
 
 final Pointer<NativeFunction<Native_MatchImageSnapshot>> _nativeMatchImageSnapshot = Pointer.fromFunction(_matchImageSnapshot);
 
-typedef Native_Environment = Pointer<Utf8> Function();
-typedef Dart_Environment = Pointer<Utf8> Function();
+typedef NativeEnvironment = Pointer<Utf8> Function();
+typedef DartEnvironment = Pointer<Utf8> Function();
 
 Pointer<Utf8> _environment() {
-  return Utf8.toUtf8(jsonEncode(Platform.environment));
+  return (jsonEncode(Platform.environment)).toNativeUtf8();
 }
 
-final Pointer<NativeFunction<Native_Environment>> _nativeEnvironment = Pointer.fromFunction(_environment);
+final Pointer<NativeFunction<NativeEnvironment>> _nativeEnvironment = Pointer.fromFunction(_environment);
 
 typedef Native_SimulatePointer = Void Function(Pointer<Pointer<MousePointer>>,  Int32 length);
-typedef Native_SimulateKeyPress = Void Function(Pointer<NativeString>);
+typedef Native_SimulateInputText = Void Function(Pointer<NativeString>);
 
 PointerChange _getPointerChange(double change) {
   return PointerChange.values[change.toInt()];
@@ -82,16 +83,16 @@ PointerChange _getPointerChange(double change) {
 
 class MousePointer extends Struct {
   @Int32()
-  int contextId;
+  external int contextId;
 
   @Double()
-  double x;
+  external double x;
 
   @Double()
-  double y;
+  external double y;
 
   @Double()
-  double change;
+  external double change;
 }
 
 void _simulatePointer(Pointer<Pointer<MousePointer>> mousePointerList, int length) {
@@ -115,41 +116,25 @@ void _simulatePointer(Pointer<Pointer<MousePointer>> mousePointerList, int lengt
     ));
   }
   PointerDataPacket dataPacket = PointerDataPacket(data: data);
-  window.onPointerDataPacket(dataPacket);
+  window.onPointerDataPacket!(dataPacket);
 }
 
 final Pointer<NativeFunction<Native_SimulatePointer>> _nativeSimulatePointer = Pointer.fromFunction(_simulatePointer);
+late TestTextInput testTextInput;
 
-void _simulateKeyPress(Pointer<NativeString> nativeChars) {
-  String chars = nativeStringToString(nativeChars);
-  if (chars == null) {
-    print('Warning: simulateKeyPress chars is null.');
-    return;
-  }
-  if (InputElement.focusInputElement != null) {
-    InputElement current = InputElement.focusInputElement;
-    TextEditingValue currentValue = current.textSelectionDelegate.textEditingValue;
-    String updatedText = currentValue.text + chars;
-    int baseOffset = currentValue.selection.baseOffset + chars.length;
-    int extentOffset = currentValue.selection.extentOffset + chars.length;
-    TextEditingValue value = currentValue.copyWith(
-      text: updatedText,
-      selection: currentValue.selection.copyWith(baseOffset: baseOffset, extentOffset: extentOffset),
-    );
-    current.formatAndSetValue(value, shouldDispatchEvent: true);
-  } else {
-    print('No focus input element found.');
-  }
+void _simulateInputText(Pointer<NativeString> nativeChars) {
+  String text = nativeStringToString(nativeChars);
+  testTextInput.enterText(text);
 }
 
-final Pointer<NativeFunction<Native_SimulateKeyPress>> _nativeSimulateKeyPress = Pointer.fromFunction(_simulateKeyPress);
+final Pointer<NativeFunction<Native_SimulateInputText>> _nativeSimulateInputText = Pointer.fromFunction(_simulateInputText);
 
 final List<int> _dartNativeMethods = [
   _nativeOnJsError.address,
   _nativeMatchImageSnapshot.address,
   _nativeEnvironment.address,
   _nativeSimulatePointer.address,
-  _nativeSimulateKeyPress.address
+  _nativeSimulateInputText.address
 ];
 
 typedef Native_RegisterTestEnvDartMethods = Void Function(Pointer<Uint64> methodBytes, Int32 length);
@@ -160,7 +145,7 @@ nativeDynamicLibrary.lookup<NativeFunction<Native_RegisterTestEnvDartMethods>>('
 
 
 void registerDartTestMethodsToCpp() {
-  Pointer<Uint64> bytes = allocate<Uint64>(count: _dartNativeMethods.length);
+  Pointer<Uint64> bytes = malloc.allocate<Uint64>(sizeOf<Uint64>() * _dartNativeMethods.length);
   Uint64List nativeMethodList = bytes.asTypedList(_dartNativeMethods.length);
   nativeMethodList.setAll(0, _dartNativeMethods);
   _registerTestEnvDartMethods(bytes, _dartNativeMethods.length);

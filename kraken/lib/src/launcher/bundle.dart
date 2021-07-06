@@ -22,13 +22,13 @@ const String DEFAULT_BUNDLE_PATH = 'assets/default.js';
 
 typedef ExtraBundleLoader = Future<ByteData> Function(String url, {String ua});
 
-ExtraBundleLoader bundleLoader;
+ExtraBundleLoader? bundleLoader;
 
-String getBundleURLFromEnv() {
+String? getBundleURLFromEnv() {
   return Platform.environment[BUNDLE_URL];
 }
 
-String getBundlePathFromEnv() {
+String? getBundlePathFromEnv() {
   return Platform.environment[BUNDLE_PATH];
 }
 
@@ -38,24 +38,24 @@ abstract class KrakenBundle {
   // Unique resource locator.
   final Uri url;
   // JS Content
-  String content;
+  late String content;
   // JS line offset, default to 0.
   List<String> assets = [];
   int lineOffset = 0;
   // Kraken bundle manifest
-  AppManifest manifest;
+  AppManifest? manifest;
 
   bool isResolved = false;
 
   Future<void> resolve();
 
-  static Future<KrakenBundle> getBundle(String path, { String contentOverride, int contextId }) async {
+  static Future<KrakenBundle> getBundle(String path, { String? contentOverride, required int contextId }) async {
     if (path == null) {
       path = DEFAULT_BUNDLE_PATH;
     }
 
     KrakenBundle bundle;
-    Uri uri = path != null ? Uri.parse(path) : null;
+    Uri uri = Uri.parse(path);
     if (contentOverride != null && contentOverride.isNotEmpty) {
       bundle = RawBundle(contentOverride, uri);
     } else {
@@ -69,9 +69,7 @@ abstract class KrakenBundle {
       }
     }
 
-    if (bundle != null) {
-      await bundle.resolve();
-    }
+    await bundle.resolve();
 
     return bundle;
   }
@@ -93,8 +91,7 @@ abstract class KrakenBundle {
 
 class RawBundle extends KrakenBundle {
   RawBundle(String content, Uri url)
-      : assert(content != null),
-        super(url) {
+      : super(url) {
     this.content = content;
   }
 
@@ -105,12 +102,9 @@ class RawBundle extends KrakenBundle {
 }
 
 class NetworkBundle extends KrakenBundle {
-  // Unique identifier.
-  String bundleId;
   int contextId;
-  NetworkBundle(Uri url, { this.contextId })
-      : assert(url != null),
-        super(url);
+  NetworkBundle(Uri url, { required this.contextId })
+      : super(url);
 
   @override
   Future<void> resolve() async {
@@ -118,10 +112,10 @@ class NetworkBundle extends KrakenBundle {
     String ua = getKrakenInfo().userAgent;
     bundle.httpClient.userAgent = ua;
     String absoluteURL = url.toString();
-    ByteData bytes;
+    ByteData? bytes;
     try {
       if(bundleLoader != null) {
-        bytes = await bundleLoader(absoluteURL, ua: ua);
+        bytes = await bundleLoader?.call(absoluteURL, ua: ua);
       }
     } catch(e){
       print(e);
@@ -135,7 +129,6 @@ class NetworkBundle extends KrakenBundle {
 }
 
 String _resolveStringFromData(ByteData data, String key) {
-  if (data == null) throw FlutterError('Unable to load asset: $key');
   // Utf8 decode is fast enough with dart 2.10
   return utf8.decode(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
 }
@@ -147,7 +140,7 @@ String _resolveStringFromData(ByteData data, String key) {
 class NetworkAssetBundle extends AssetBundle {
   /// Creates an network asset bundle that resolves asset keys as URLs relative
   /// to the given base URL.
-  NetworkAssetBundle(Uri baseUrl, { this.contextId })
+  NetworkAssetBundle(Uri baseUrl, { required this.contextId })
       : _baseUrl = baseUrl,
         httpClient = HttpClient();
 
@@ -178,8 +171,6 @@ class NetworkAssetBundle extends AssetBundle {
   /// fetched.
   @override
   Future<T> loadStructuredData<T>(String key, Future<T> parser(String value)) async {
-    assert(key != null);
-    assert(parser != null);
     return parser(await loadString(key));
   }
 
@@ -192,8 +183,7 @@ class NetworkAssetBundle extends AssetBundle {
 
 class AssetsBundle extends KrakenBundle {
   AssetsBundle(Uri url)
-      : assert(url != null),
-        super(url);
+      : super(url);
 
   @override
   Future<void> resolve() async {

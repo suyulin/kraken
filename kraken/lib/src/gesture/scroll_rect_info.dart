@@ -5,18 +5,17 @@ import 'package:kraken/kraken.dart';
 typedef ScrollRectTrigger = void Function(List<ScrollRect> rects);
 
 class ScrollRectInfo {
-  static double offsetY;
 
-  static List<Rect> scrollXRect = List();
+  static List<Rect> scrollXRect = List.empty(growable: true);
 
   static Map<String, List<int>> targetMap = Map();
 
-  static addTargetIds(KrakenController controller, int targetId) {
+  static addTargetIds(KrakenController? controller, int targetId) {
     if (controller != null) {
       try {
         String key = '${controller.hashCode}';
-        targetMap.putIfAbsent(key, () => List());
-        List<int> list = targetMap[key];
+        targetMap.putIfAbsent(key, () => List.empty(growable: true));
+        List<int> list = targetMap[key]!;
         if (!list.contains(targetId)) {
           list.add(targetId);
         }
@@ -31,19 +30,19 @@ class ScrollRectInfo {
       try {
         List<int> list;
         String key = '${controller.hashCode}';
-        list = targetMap[key] ?? List();
+        list = targetMap[key] ?? List.empty(growable: true);
         return list;
       } catch (e) {
         print(e);
       }
     }
-    return List();
+    return List.empty(growable: true);
   }
 
   static triggerUpdate(List<ScrollRect> rects) {
     if (scrollRectTrigger != null) {
       try {
-        scrollRectTrigger(rects);
+        scrollRectTrigger!(rects);
       } catch (e) {
         print(e);
       }
@@ -51,7 +50,7 @@ class ScrollRectInfo {
   }
 }
 
-ScrollRectTrigger scrollRectTrigger;
+ScrollRectTrigger? scrollRectTrigger;
 
 class ScrollRect {
   ScrollRect(this.leftTop, this.rightBottom);

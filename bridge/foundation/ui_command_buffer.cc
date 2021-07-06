@@ -34,8 +34,14 @@ void UICommandBuffer::addCommand(int32_t id, int32_t type, NativeString &args_01
   if (!update_batched) {
       void * bridge = getJSContext(contextId);
       std::shared_ptr<kraken::DartMethodPointer> methodPointer = kraken::getDartMethod(isolateHash);
-      KRAKEN_LOG(VERBOSE) << " addCommand(int32_t id, int32_t type, NativeString &args_01, void *nativePtr)  bridge::--> " << bridge << std::endl;
-      KRAKEN_LOG(VERBOSE) << " addCommand(int32_t id, int32_t type, NativeString &args_01, void *nativePtr)  methodPointer::--> " << methodPointer << std::endl;
+      if (std::getenv("ENABLE_KRAKEN_JS_LOG") != nullptr && strcmp(std::getenv("ENABLE_KRAKEN_JS_LOG"), "true") == 0) {
+          KRAKEN_LOG(VERBOSE)
+          << " addCommand(int32_t id, int32_t type, NativeString &args_01, void *nativePtr)  bridge::--> " << bridge
+          << std::endl;
+          KRAKEN_LOG(VERBOSE)
+          << " addCommand(int32_t id, int32_t type, NativeString &args_01, void *nativePtr)  methodPointer::--> "
+          << methodPointer << std::endl;
+      }
 
     methodPointer->requestBatchUpdate(contextId);
     update_batched = true;

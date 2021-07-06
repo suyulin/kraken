@@ -418,6 +418,12 @@ JSValueRef JSPerformance::__kraken_navigation_summary__(JSContextRef ctx, JSObje
   performance->measureSummary();
 
   std::vector<NativePerformanceEntry *> entries = performance->getFullEntries();
+
+  if (entries.empty()) {
+    throwJSError(ctx, "Failed to get navigation summary: flutter is not running in profile mode.", exception);
+    return nullptr;
+  }
+
   std::vector<NativePerformanceEntry *> measures;
   for (auto &m_entries : entries) {
     if (std::string(m_entries->entryType) == "measure") {
@@ -482,7 +488,7 @@ JSValueRef JSPerformance::__kraken_navigation_summary__(JSContextRef ctx, JSObje
                           insertAdjacentNodeCost + removeNodeCost + setStyleCost + setPropertiesCost +
                           removePropertiesCost;
   // layout and paint measure are not correct.
-  //  double renderingCost = flexLayoutCost + flowLayoutCost + intrinsicLayoutCost + silverLayoutCost + paintCost;
+  double renderingCost = flexLayoutCost + flowLayoutCost + intrinsicLayoutCost + silverLayoutCost + paintCost;
   double totalCost = widgetCreationCost + initBundleCost;
 
   char buffer[5000];
@@ -490,7 +496,7 @@ JSValueRef JSPerformance::__kraken_navigation_summary__(JSContextRef ctx, JSObje
   sprintf(buffer, R"(
 Total time cost(without paint and layout): %.*fms
 
-+ %s %.*fms
+%s: %.*fms
   + %s %.*fms
   + %s %.*fms
   + %s %.*fms
@@ -519,6 +525,12 @@ First Bundle Load: %.*fms
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+  + %s %.*fms avg: %.*fms count: %zu
+Rendering: %.*fms
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
   + %s %.*fms avg: %.*fms count: %zu
@@ -559,7 +571,13 @@ First Bundle Load: %.*fms
     PERF_DOM_FORCE_LAYOUT_COST, 2, domForceLayoutCost, 2, domForceLayoutAvg, domForceLayoutCount,
     PERF_DOM_FLUSH_UI_COMMAND_COST, 2, domFlushUICommandCost, 2, domFlushUICommandAvg, domFlushUICommandCount,
     PERF_SET_PROPERTIES_COST, 2, setPropertiesCost, 2, setPropertiesAvg, setPropertiesCount,
-    PERF_REMOVE_PROPERTIES_COST, 2, removePropertiesCost, 2, removePropertiesAvg, removePropertiesCount
+    PERF_REMOVE_PROPERTIES_COST, 2, removePropertiesCost, 2, removePropertiesAvg, removePropertiesCount,
+  2, renderingCost,
+  PERF_FLEX_LAYOUT_COST, 2, flexLayoutCost, 2, flexLayoutAvg, flexLayoutCount,
+  PERF_FLOW_LAYOUT_COST, 2, flowLayoutCost, 2, flowLayoutAvg, flowLayoutCount,
+  PERF_INTRINSIC_LAYOUT_COST, 2, intrinsicLayoutCost, 2, intrinsicLayoutAvg, intrinsicLayoutCount,
+  PERF_SILVER_LAYOUT_COST, 2, silverLayoutCost, 2, silverLayoutAvg, silverLayoutCount,
+  PERF_PAINT_COST, 2, paintCost, 2, paintAvg, paintCount
 );
   // clang-format on
   printFunctionCallTime();
@@ -664,6 +682,7 @@ std::vector<NativePerformanceEntry *> JSPerformance::getFullEntries() {
     return std::vector<NativePerformanceEntry *>();
   }
   auto dartEntryList = getDartMethod()->getPerformanceEntries(context->getContextId());
+  if (dartEntryList == nullptr) return std::vector<NativePerformanceEntry *>();
   auto dartEntityBytes = dartEntryList->entries;
   std::vector<NativePerformanceEntry *> dartEntries;
   dartEntries.reserve(dartEntryList->length);

@@ -33,8 +33,8 @@ final Pointer<NativeFunction<Native_Call>> nativeCall = Pointer.fromFunction(Pla
 class RenderComponentViewBoundaryBox extends RenderConstrainedBox {
 
   RenderComponentViewBoundaryBox({
-    BoxConstraints additionalConstraints,
-    RenderBox child,
+    required BoxConstraints additionalConstraints,
+    required RenderBox child,
   }) : super(additionalConstraints: additionalConstraints, child: child);
 
 
@@ -52,12 +52,12 @@ class PlatformViewElement extends Element implements PlatformViewHost {
 
   static SplayTreeMap<int, PlatformViewElement> _nativeMap = SplayTreeMap();
 
-  JSContext _jsContext;
+  JSContext? _jsContext;
 
-  bool _hasTag;
+  bool? _hasTag;
 
   static PlatformViewElement getPlatformViewOfNativePtr(Pointer<NativePlatformViewElement> nativePlatformViewElement) {
-    PlatformViewElement platformViewElement = _nativeMap[nativePlatformViewElement.address];
+    PlatformViewElement platformViewElement = _nativeMap[nativePlatformViewElement.address]!;
     assert(platformViewElement != null, 'Can not get PlatformViewElement from nativeElement: $nativePlatformViewElement');
     return platformViewElement;
   }
@@ -69,18 +69,18 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   // ObjectElement(int targetId, Pointer<NativeObjectElement> nativePtr, ElementManager elementManager)
   //     : super(targetId, nativePtr.ref.nativeElement, elementManager, tagName: OBJECT, defaultStyle: _defaultStyle, isIntrinsicBox: true)
 
-  PlatformViewElement(int targetId, this.nativePlatformViewElement, ElementManager elementManager)
+  PlatformViewElement( int targetId, this.nativePlatformViewElement, ElementManager elementManager)
       : super(targetId, nativePlatformViewElement.ref.nativeElement, elementManager,
             tagName: PLATFORM_VIEW,
             defaultStyle: _defaultStyle,
             isIntrinsicBox: true) {
     _nativeMap[nativePlatformViewElement.address] = this;
     nativePlatformViewElement.ref.call = nativeCall;
-    _width = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_WIDTH, viewportSize);
-    _height = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_HEIGHT, viewportSize);
+    _width = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_WIDTH, viewportSize)!;
+    _height = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_HEIGHT, viewportSize)!;
 
     try {
-      _jsContext = JSContext(elementManager?.controller?.bundleURL, '${elementManager?.controller?.view?.contextId}');
+      _jsContext = JSContext(elementManager.controller.bundleURL, '${elementManager.controller.view.contextId}');
     } catch (e) {
       print(e);
     }
@@ -100,13 +100,13 @@ class PlatformViewElement extends Element implements PlatformViewHost {
 
   final Pointer<NativePlatformViewElement> nativePlatformViewElement;
 
-  String componentType;
+  String componentType = 'lazy';
   Map componentParams = Map();
 
-  RenderConstrainedBox sizedBox;
+  RenderConstrainedBox? sizedBox;
 
-  PlatformViewComponentClient platformViewComponent;
-  RenderBox platformRenderBox;
+  PlatformViewComponentClient? platformViewComponent;
+  RenderBox? platformRenderBox;
   bool _hasAddIntersectionChangeListener = false;
 
   static const String TYPE = 'type';
@@ -124,7 +124,7 @@ class PlatformViewElement extends Element implements PlatformViewHost {
     }
 
     if (key == TYPE) {
-      (renderBoxModel as RenderIntrinsic)?.child = null;
+      (renderBoxModel as RenderIntrinsic)..child = null;
       componentType = value;
       if(properties['loading'] != 'lazy') {
         _buildPlatformRenderBox();
@@ -165,9 +165,9 @@ class PlatformViewElement extends Element implements PlatformViewHost {
     if(kDebugMode || _debugLifecycle) {
       print('PlatformView[$targetId] willAttachRenderer');
     }
-    if (sizedBox != null && sizedBox.attached != true ) {
+    if (sizedBox != null && sizedBox!.attached != true ) {
       try {
-        addChild(sizedBox);
+        addChild(sizedBox!);
       } catch (e) {
         print(e.toString());
       }
@@ -251,11 +251,11 @@ class PlatformViewElement extends Element implements PlatformViewHost {
         creationParams: componentParams,
         gestureRecognizers: _emptyRecognizersSet,
       );
-      platformRenderBox = platformViewComponent?.getRenderBox();
+      platformRenderBox = platformViewComponent!.getRenderBox();
       sizedBox = RenderComponentViewBoundaryBox(
           additionalConstraints: BoxConstraints.tight(Size(width, height)),
-          child: platformRenderBox);
-      addChild(sizedBox);
+          child: platformRenderBox!);
+      addChild(sizedBox!);
     }
   }
 
@@ -271,8 +271,8 @@ class PlatformViewElement extends Element implements PlatformViewHost {
 
 
   @override
-  void attachTo(Element parent, {RenderObject after}) {
-    super.attachTo(parent,after: after);
+  void attachTo(Element parent, {RenderBox? after}) {
+    super.attachTo(parent, after: after);
     if(kDebugMode || _debugLifecycle) {
       print('PlatformView[$targetId] attachTo');
       print("${hashCode} + attachTo element");
@@ -288,7 +288,7 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   void _ensureAddScrollRectTargetIds() {
     if (targetId >= 0 && _hasTag != true) {
       _hasTag = true;
-      ScrollRectInfo.addTargetIds(elementManager?.controller, targetId);
+      ScrollRectInfo.addTargetIds(elementManager.controller, targetId);
     }
   }
 
@@ -329,9 +329,9 @@ class PlatformViewElement extends Element implements PlatformViewHost {
     platformViewComponent?.removeProperty(key);
   }
 
-  double _width;
+  double? _width;
 
-  double get width => _width;
+  double get width => _width ?? 0;
 
   set width(double newValue) {
     if (newValue != null) {
@@ -349,9 +349,9 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   }
 
   /// Element attribute height
-  double _height;
+  double? _height;
 
-  double get height => _height;
+  double get height => _height ?? 0;
 
   set height(double newValue) {
     if (newValue != null) {
@@ -373,7 +373,7 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   <Factory<OneSequenceGestureRecognizer>>{};
 
   @override
-  JSContext getJSContext() => _jsContext;
+  JSContext getJSContext() => _jsContext ?? JSContext(null, '-1');
 }
 
 abstract class PlatformViewHost {

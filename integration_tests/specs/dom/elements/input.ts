@@ -18,6 +18,16 @@ describe('Tags input', () => {
     await snapshot();
   });
 
+  it('with placeholder and value set', async () => {
+    const input = document.createElement('input');
+    input.style.width = '100px';
+    input.setAttribute('placeholder', 'Please input');
+    input.setAttribute('value', 'Hello World');
+
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
   it('with height smaller than text height', async () => {
     const input = document.createElement('input');
     input.style.fontSize = '26px';
@@ -36,6 +46,115 @@ describe('Tags input', () => {
     document.body.appendChild(input);
 
     await snapshot();
+  });
+
+  it('height not set and line-height set', async () => {
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '1234567890',   
+        style: {
+            lineHeight: '50px',
+            fontSize: '30px', 
+        },
+      }
+    );
+    BODY.appendChild(div);
+  });
+
+  // @TODO: line-height should not take effect for input element itself.
+  xit('line-height set and is smaller than text size', async (done) => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567890',   
+        style: {
+            lineHeight: '10px',
+            fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+  });
+
+  it('line-height set and is bigger than text size', async () => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567890',   
+        style: {
+            lineHeight: '100px',
+            fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+  });
+   
+  it('line-height changes when height is not set', async (done) => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567890',   
+        style: {
+          lineHeight: '50px', 
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      input.style.lineHeight = '100px';
+      await snapshot();
+      done();
+    });
+  });
+
+  it('font-size set and width not set', async () => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567890',   
+        style: {
+          fontSize: '30px'
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+  });
+
+  it('font-size changes when width not set', async (done) => {
+    let input;
+    input = createElement(
+      'input',
+      {
+        value: '1234567890',   
+        style: {
+        },
+      }
+    );
+    BODY.appendChild(input);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      input.style.fontSize = '30px';
+      await snapshot();
+      done();
+    });
   });
 
   it('with value first', async () => {
@@ -98,7 +217,7 @@ describe('Tags input', () => {
   });
 
   it('event input', (done) => {
-    const VALUE = 'HELLO WORLD';
+    const VALUE = 'Hello';
     const input = document.createElement('input');
     input.value = '';
     input.addEventListener('input', function handler(event: InputEvent) {
@@ -114,7 +233,135 @@ describe('Tags input', () => {
     document.body.appendChild(input);
     input.focus();
     requestAnimationFrame(() => {
-      simulateKeyPress(VALUE);
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=text', (done) => {
+    const VALUE = 'Hello';
+    const input = <input inputmode="text" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=tel', (done) => {
+    const VALUE = '123456789';
+    const input = <input inputmode="tel" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=decimal', (done) => {
+    const VALUE = '123456789';
+    const input = <input inputmode="decimal" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=numeric', (done) => {
+    const VALUE = '123456789';
+    const input = <input inputmode="numeric" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=search', (done) => {
+    const VALUE = 'Hello';
+    const input = <input inputmode="search" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=email', (done) => {
+    const VALUE = 'example@example.com';
+    const input = <input inputmode="email" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support inputmode=url', (done) => {
+    const VALUE = 'example.com';
+    const input = <input inputmode="url" />;
+    input.addEventListener('input', function handler(event: InputEvent) {
+      input.removeEventListener('input', handler);
+      expect(input.value).toEqual(VALUE);
+      done();
+    });
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText(VALUE);
+    });
+  });
+
+  it('support maxlength', (done) => {
+    const input = <input maxlength="3" />;
+    document.body.appendChild(input);
+    input.focus();
+    requestAnimationFrame(() => {
+      simulateInputText('1');
+      requestAnimationFrame(() => {
+        expect(input.value).toEqual('1');
+
+        simulateInputText('123');
+        requestAnimationFrame(() => {
+          expect(input.value).toEqual('123');
+
+          simulateInputText('1234');
+          requestAnimationFrame(() => {
+            expect(input.value).toEqual('123');
+            done();
+          });
+        });
+      });
     });
   });
 });

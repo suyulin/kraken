@@ -1,10 +1,10 @@
 class JSContext {
-  String url;
-  String id;
+  String url = 'unknown';
+  String id = '-1';
 
-  JSContext(String url, String id, [dynamic args]) {
-    this.url = url;
-    this.id = id;
+  JSContext(String? url, String? id, [dynamic args]) {
+    this.url = url ?? 'unknown';
+    this.id = id ?? '-1';
   }
 
   Map toMap() => {

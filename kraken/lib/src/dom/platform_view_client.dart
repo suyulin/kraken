@@ -12,7 +12,7 @@ typedef PlatformViewComponentFactory = PlatformViewComponentClient Function(
   Set<Factory<OneSequenceGestureRecognizer>> gestureRecognizers,
 });
 
-PlatformViewComponentFactory _platformViewComponentFactory;
+PlatformViewComponentFactory? _platformViewComponentFactory;
 
 set platformViewComponentFactory(
     PlatformViewComponentFactory platformViewComponentFactory) {
@@ -23,7 +23,7 @@ PlatformViewComponentFactory get platformViewComponentFactory {
   if (_platformViewComponentFactory == null) {
     throw Exception('PlatformViewComponentFactory cannot be null');
   }
-  return _platformViewComponentFactory;
+  return _platformViewComponentFactory!;
 }
 
 abstract class PlatformViewComponentClient {
@@ -39,7 +39,7 @@ abstract class PlatformViewComponentClient {
 
   void onSizeChange(double width, double height);
 
-  void onAttachTo(Element parent, {RenderObject after});
+  void onAttachTo(Element parent, {RenderBox? after});
 
   void onIntersectionChange(IntersectionObserverEntry entry);
 

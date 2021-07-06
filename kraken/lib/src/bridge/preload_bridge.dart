@@ -2,7 +2,7 @@ import 'dart:isolate';
 
 import 'package:kraken/bridge.dart';
 
-int preloadedContext;
+int? preloadedContext;
 
 preloadBridge() {
   try {
@@ -13,7 +13,7 @@ preloadBridge() {
 }
 
 int peekPreloadContext() {
-  int context = preloadedContext;
+  int context = preloadedContext!;
   context = _ensureContext(context);
   preloadBridge();
   return context;

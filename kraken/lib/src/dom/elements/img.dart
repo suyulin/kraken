@@ -3,6 +3,8 @@
  * Author: Kraken Team.
  */
 
+import 'dart:ui' as ui show Image;
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:kraken/dom.dart';
@@ -32,15 +34,15 @@ final Pointer<NativeFunction<GetImageWidth>> nativeGetImageNaturalWidth =  Point
 final Pointer<NativeFunction<GetImageHeight>> nativeGetImageNaturalHeight =  Pointer.fromFunction(ImageElement.getImageNaturalHeight, 0.0);
 
 class ImageElement extends Element {
-  String _source;
-  ImageProvider _image;
-  RenderImage _imageBox;
-  ImageStream _imageStream;
-  ImageInfo _imageInfo;
-  double _propertyWidth;
-  double _propertyHeight;
-  ImageStreamListener _initImageListener;
-  ImageStreamListener _renderStreamListener;
+  String? _source;
+  ImageProvider? _image;
+  RenderImage? _imageBox;
+  ImageStream? _imageStream;
+  ImageInfo? _imageInfo;
+  double? _propertyWidth;
+  double? _propertyHeight;
+  ImageStreamListener? _initImageListener;
+  late ImageStreamListener _renderStreamListener;
 
   /// Number of image frame, used to identify gif after image loaded
   int _frameNumber = 0;
@@ -56,18 +58,18 @@ class ImageElement extends Element {
 
   static SplayTreeMap<int, ImageElement> _nativeMap = SplayTreeMap();
 
-  static Element getImageElementOfNativePtr(Pointer<NativeImgElement> nativeImageElement) {
-    ImageElement element = _nativeMap[nativeImageElement.address];
-    assert(element != null, 'Can not get element from nativeElement: $nativeImageElement');
+  static ImageElement getImageElementOfNativePtr(Pointer<NativeImgElement> nativeImageElement) {
+    ImageElement? element = _nativeMap[nativeImageElement.address];
+    if (element == null) throw FlutterError('Can not get element from nativeElement: $nativeImageElement');
     return element;
   }
 
-  static double getImageWidth(Pointer<NativeImgElement> nativeImageElement) {
+  static double? getImageWidth(Pointer<NativeImgElement> nativeImageElement) {
     ImageElement imageElement = getImageElementOfNativePtr(nativeImageElement);
     return imageElement.width;
   }
 
-  static double getImageHeight(Pointer<NativeImgElement> nativeImageElement) {
+  static double? getImageHeight(Pointer<NativeImgElement> nativeImageElement) {
     ImageElement imageElement = getImageElementOfNativePtr(nativeImageElement);
     return imageElement.height;
   }
@@ -87,12 +89,12 @@ class ImageElement extends Element {
 
   ImageElement(int targetId, this.nativeImgElement, ElementManager elementManager)
       : super(
-        targetId,
-        nativeImgElement.ref.nativeElement,
-        elementManager,
-        isIntrinsicBox: true,
-        tagName: IMAGE,
-        defaultStyle: _defaultStyle) {
+      targetId,
+      nativeImgElement.ref.nativeElement,
+      elementManager,
+      isIntrinsicBox: true,
+      tagName: IMAGE,
+      defaultStyle: _defaultStyle) {
     _renderStreamListener = ImageStreamListener(_renderImageStream);
     super.setProperty('loading', 'lazy');
     _nativeMap[nativeImgElement.address] = this;
@@ -102,6 +104,8 @@ class ImageElement extends Element {
     nativeImgElement.ref.getImageNaturalWidth = nativeGetImageNaturalWidth;
     nativeImgElement.ref.getImageNaturalHeight = nativeGetImageNaturalHeight;
   }
+
+  ui.Image? get image => _imageInfo?.image;
 
   @override
   void willAttachRenderer() {
@@ -134,40 +138,40 @@ class ImageElement extends Element {
     _nativeMap.remove(nativeImgElement.address);
   }
 
-  double get width {
+  double? get width {
     if (_imageBox != null) {
-      return _imageBox.width;
+      return _imageBox!.width;
     }
 
-    if (renderBoxModel != null && renderBoxModel.hasSize) {
-      return renderBoxModel.clientWidth;
+    if (renderBoxModel != null && renderBoxModel!.hasSize) {
+      return renderBoxModel!.clientWidth;
     }
 
     return 0.0;
   }
 
-  double get height {
+  double? get height {
     if (_imageBox != null) {
-      return _imageBox.height;
+      return _imageBox!.height;
     }
 
-    if (renderBoxModel != null && renderBoxModel.hasSize) {
-      return renderBoxModel.clientHeight;
+    if (renderBoxModel != null && renderBoxModel!.hasSize) {
+      return renderBoxModel!.clientHeight;
     }
 
     return 0.0;
   }
 
   double get naturalWidth {
-    if (_imageInfo != null && _imageInfo.image != null) {
-      return _imageInfo.image.width.toDouble();
+    if (_imageInfo != null) {
+      return _imageInfo!.image.width.toDouble();
     }
     return 0.0;
   }
 
   double get naturalHeight {
-    if (_imageInfo != null && _imageInfo.image != null) {
-      return _imageInfo.image.height.toDouble();
+    if (_imageInfo != null) {
+      return _imageInfo!.image.height.toDouble();
     }
     return 0.0;
   }
@@ -177,7 +181,7 @@ class ImageElement extends Element {
     // Image dimensions(width/height) should specified for performance when lazy-load.
     if (_shouldLazyLoading) {
       _isInLazyLoading = true;
-      renderBoxModel.addIntersectionChangeListener(_handleIntersectionChange);
+      renderBoxModel!.addIntersectionChangeListener(_handleIntersectionChange);
     } else {
       _constructImageChild();
     }
@@ -196,20 +200,20 @@ class ImageElement extends Element {
 
   void _resetLazyLoading() {
     _isInLazyLoading = false;
-    renderBoxModel.removeIntersectionChangeListener(_handleIntersectionChange);
+    renderBoxModel!.removeIntersectionChangeListener(_handleIntersectionChange);
   }
 
   void _removeImage() {
     _removeStreamListener();
     _image = null;
-    _imageBox.image = null;
+    _imageBox!.image = null;
   }
 
   void _constructImageChild() {
     _imageBox = createRenderImageBox();
 
     if (childNodes.isEmpty) {
-      addChild(_imageBox);
+      addChild(_imageBox!);
     }
   }
 
@@ -217,8 +221,8 @@ class ImageElement extends Element {
     // `load` event is a simple event.
     if (isConnected) {
       // If image in tree, make sure the image-box has been layout, using addPostFrameCallback.
-      SchedulerBinding.instance.scheduleFrame();
-      SchedulerBinding.instance.addPostFrameCallback((_) {
+      SchedulerBinding.instance!.scheduleFrame();
+      SchedulerBinding.instance!.addPostFrameCallback((_) {
         dispatchEvent(Event(EVENT_LOAD));
       });
     } else {
@@ -239,14 +243,13 @@ class ImageElement extends Element {
 
     // Only trigger `initImageListener` once.
     if (_initImageListener != null) {
-      _imageStream?.removeListener(_initImageListener);
+      _imageStream?.removeListener(_initImageListener!);
     }
   }
 
   void _renderImageStream(ImageInfo imageInfo, bool synchronousCall) {
     _frameNumber++;
     _imageInfo = imageInfo;
-    _imageBox?.image = _imageInfo?.image;
 
     // @HACK Flutter image cache will cause image steam listener to trigger twice when page reload
     // so use two frames to tell multiframe image from static image, note this optimization will fail
@@ -260,6 +263,7 @@ class ImageElement extends Element {
     }
 
     _resize();
+    _imageBox?.image = _imageInfo?.image;
   }
 
   // Delay image size setting to next frame to make sure image has been layouted
@@ -268,8 +272,8 @@ class ImageElement extends Element {
   void _handleImageResizeAfterLayout() {
     if (_hasImageLayoutCallbackPending) return;
     _hasImageLayoutCallbackPending = true;
-    SchedulerBinding.instance.scheduleFrame();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    SchedulerBinding.instance!.scheduleFrame();
+    SchedulerBinding.instance!.addPostFrameCallback((_) {
       _hasImageLayoutCallbackPending = false;
       _resize();
     });
@@ -280,21 +284,21 @@ class ImageElement extends Element {
       return _handleImageResizeAfterLayout();
     }
 
-    RenderStyle renderStyle = renderBoxModel.renderStyle;
+    RenderStyle renderStyle = renderBoxModel!.renderStyle;
     // Waiting for size computed after layout stage
     if (style.contains(WIDTH) && renderStyle.width == null ||
         style.contains(HEIGHT) && renderStyle.height == null) {
       return _handleImageResizeAfterLayout();
     }
 
-    double width = renderStyle.width ?? _propertyWidth;
-    double height = renderStyle.height ?? _propertyHeight;
+    double? width = renderStyle.width ?? _propertyWidth;
+    double? height = renderStyle.height ?? _propertyHeight;
 
     if (renderStyle.width == null && _propertyWidth != null) {
-      renderBoxModel.renderStyle.updateSizing(WIDTH, _propertyWidth);
+      renderBoxModel!.renderStyle.updateSizing(WIDTH, _propertyWidth);
     }
     if (renderStyle.height == null && _propertyHeight != null) {
-      renderBoxModel.renderStyle.updateSizing(HEIGHT, _propertyHeight);
+      renderBoxModel!.renderStyle.updateSizing(HEIGHT, _propertyHeight);
     }
 
     if (width == null && height == null) {
@@ -316,13 +320,13 @@ class ImageElement extends Element {
 
     _imageBox?.width = width;
     _imageBox?.height = height;
-    renderBoxModel.intrinsicWidth = naturalWidth;
-    renderBoxModel.intrinsicHeight = naturalHeight;
+    renderBoxModel!.intrinsicWidth = naturalWidth;
+    renderBoxModel!.intrinsicHeight = naturalHeight;
 
     if (naturalWidth == 0.0 || naturalHeight == 0.0) {
-      renderBoxModel.intrinsicRatio = null;
+      renderBoxModel!.intrinsicRatio = null;
     } else {
-      renderBoxModel.intrinsicRatio = naturalHeight / naturalWidth;
+      renderBoxModel!.intrinsicRatio = naturalHeight / naturalWidth;
     }
   }
 
@@ -330,13 +334,13 @@ class ImageElement extends Element {
     _imageStream?.removeListener(_renderStreamListener);
 
     if (_initImageListener != null) {
-      _imageStream?.removeListener(_initImageListener);
+      _imageStream?.removeListener(_initImageListener!);
     }
     _imageStream = null;
   }
 
   RenderImage createRenderImageBox() {
-    RenderStyle renderStyle = renderBoxModel.renderStyle;
+    RenderStyle renderStyle = renderBoxModel!.renderStyle;
     BoxFit objectFit = renderStyle.objectFit;
     Alignment objectPosition = renderStyle.objectPosition;
 
@@ -390,17 +394,17 @@ class ImageElement extends Element {
   }
 
   void _loadImage() {
-    String source = properties['src'];
+    String? source = properties['src'];
     if (_source == null || _source != source) {
       _source = source;
       if (source != null && source.isNotEmpty) {
         _removeStreamListener();
         _image = CSSUrl.parseUrl(source, cache: properties['caching'], contextId: elementManager.contextId);
-        _imageStream = _image.resolve(ImageConfiguration.empty);
-        _imageStream.addListener(_renderStreamListener);
+        _imageStream = _image!.resolve(ImageConfiguration.empty);
+        _imageStream!.addListener(_renderStreamListener);
 
         _initImageListener = ImageStreamListener(_initImageInfo);
-        _imageStream.addListener(_initImageListener);
+        _imageStream!.addListener(_initImageListener!);
       }
     }
   }
@@ -410,12 +414,12 @@ class ImageElement extends Element {
     switch (key) {
       case WIDTH:
         if (_imageBox != null) {
-          return _imageBox.width;
+          return _imageBox!.width;
         }
         return 0;
       case HEIGHT:
         if (_imageBox != null) {
-          return _imageBox.height;
+          return _imageBox!.height;
         }
         return 0;
     }
@@ -423,13 +427,13 @@ class ImageElement extends Element {
     return super.getProperty(key);
   }
 
-  void _stylePropertyChanged(String property, String original, String present) {
+  void _stylePropertyChanged(String property, String? original, String present) {
     if (property == WIDTH || property == HEIGHT) {
       _resize();
     } else if (property == OBJECT_FIT && _imageBox != null) {
-      _imageBox.fit = renderBoxModel.renderStyle.objectFit;
+      _imageBox!.fit = renderBoxModel!.renderStyle.objectFit;
     } else if (property == OBJECT_POSITION && _imageBox != null) {
-      _imageBox.alignment = renderBoxModel.renderStyle.objectPosition;
+      _imageBox!.alignment = renderBoxModel!.renderStyle.objectPosition;
     }
   }
 }

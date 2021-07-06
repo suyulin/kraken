@@ -23,6 +23,8 @@ import 'native_types.dart';
 // 5. Get a reference to the C function, and put it into a variable.
 // 6. Call the C function.
 
+typedef DartGetUserAgent = Pointer<Utf8> Function(Pointer<NativeKrakenInfo>);
+
 class KrakenInfo {
   Pointer<NativeKrakenInfo> _nativeKrakenInfo;
   static String extraInfoStr = "Youku/1.22.4 +";
@@ -31,82 +33,83 @@ class KrakenInfo {
 
   String get appName {
     if (_nativeKrakenInfo.ref.app_name == nullptr) return '';
-    return Utf8.fromUtf8(_nativeKrakenInfo.ref.app_name);
+    return _nativeKrakenInfo.ref.app_name.toDartString();
   }
 
   String get appVersion {
     if (_nativeKrakenInfo.ref.app_version == nullptr) return '';
-    return Utf8.fromUtf8(_nativeKrakenInfo.ref.app_version);
+    return _nativeKrakenInfo.ref.app_version.toDartString();
   }
 
   String get appRevision {
     if (_nativeKrakenInfo.ref.app_revision == nullptr) return '';
-    return Utf8.fromUtf8(_nativeKrakenInfo.ref.app_revision);
+    return _nativeKrakenInfo.ref.app_revision.toDartString();
   }
 
   String get systemName {
     if (_nativeKrakenInfo.ref.system_name == nullptr) return '';
-    return Utf8.fromUtf8(_nativeKrakenInfo.ref.system_name);
+    return _nativeKrakenInfo.ref.system_name.toDartString();
   }
 
   String get extraInfo {
     if (_nativeKrakenInfo.ref.extra_info == nullptr) return '';
-    return Utf8.fromUtf8(_nativeKrakenInfo.ref.extra_info);
+    return (_nativeKrakenInfo.ref.extra_info).toDartString();
   }
 
   void _updateExtraInfo(String extraInfo) {
     if (_nativeKrakenInfo.ref != nullptr) {
-      _nativeKrakenInfo.ref.extra_info = Utf8.toUtf8(extraInfo);
+      _nativeKrakenInfo.ref.extra_info = (extraInfo).toNativeUtf8();
     }
   }
 
   String get userAgent {
     if (_nativeKrakenInfo.ref.getUserAgent == nullptr) return '';
     _updateExtraInfo("$extraInfoStr");
-    Dart_GetUserAgent getUserAgent = _nativeKrakenInfo.ref.getUserAgent.asFunction();
-    return Utf8.fromUtf8(getUserAgent(_nativeKrakenInfo));
+    DartGetUserAgent getUserAgent = _nativeKrakenInfo.ref.getUserAgent.asFunction();
+    return getUserAgent(_nativeKrakenInfo).toDartString();
   }
 }
 
-typedef Native_GetKrakenInfo = Pointer<NativeKrakenInfo> Function();
-typedef Dart_GetKrakenInfo = Pointer<NativeKrakenInfo> Function();
+typedef NativeGetKrakenInfo = Pointer<NativeKrakenInfo> Function();
+typedef DartGetKrakenInfo = Pointer<NativeKrakenInfo> Function();
 
-final Dart_GetKrakenInfo _getKrakenInfo =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_GetKrakenInfo>>('getKrakenInfo').asFunction();
+final DartGetKrakenInfo _getKrakenInfo =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeGetKrakenInfo>>('getKrakenInfo').asFunction();
 
-KrakenInfo _cachedInfo;
+final KrakenInfo _cachedInfo = KrakenInfo(_getKrakenInfo());
 
 KrakenInfo getKrakenInfo() {
-  if (_cachedInfo != null) return _cachedInfo;
-  Pointer<NativeKrakenInfo> nativeKrakenInfo = _getKrakenInfo();
-  KrakenInfo info = KrakenInfo(nativeKrakenInfo);
-  _cachedInfo = info;
-  return info;
+  return _cachedInfo;
 }
 
 // Register invokeEventListener
-typedef Native_InvokeEventListener = Void Function(Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType,  Pointer<Void> nativeEvent, Pointer<NativeString>);
-typedef Dart_InvokeEventListener = void Function(int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeString>);
+typedef NativeInvokeEventListener = Void Function(Int32 contextId, Pointer<NativeString>, Pointer<Utf8> eventType,  Pointer<Void> nativeEvent, Pointer<NativeString>);
+typedef DartInvokeEventListener = void Function(int contextId, Pointer<NativeString>, Pointer<Utf8> eventType, Pointer<Void> nativeEvent, Pointer<NativeString>);
 
-final Dart_InvokeEventListener _invokeModuleEvent =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_InvokeEventListener>>('invokeModuleEvent').asFunction();
+final DartInvokeEventListener _invokeModuleEvent =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeInvokeEventListener>>('invokeModuleEvent').asFunction();
 
-void invokeModuleEvent(int contextId, String moduleName, Event event, String extra) {
+void invokeModuleEvent(int contextId, String moduleName, Event? event, String extra) {
   if (_jsContextValid(contextId)) {
     Pointer<NativeString> nativeModuleName = stringToNativeString(moduleName);
     Pointer<Void> nativeEvent = event == null ? nullptr : event.toNative().cast<Void>();
-    _invokeModuleEvent(contextId, nativeModuleName, event == null ? nullptr : Utf8.toUtf8(event.type), nativeEvent, stringToNativeString(extra ?? ''));
+    _invokeModuleEvent(contextId, nativeModuleName, event == null ? nullptr : event.type.toNativeUtf8(), nativeEvent, stringToNativeString(extra));
     freeNativeString(nativeModuleName);
   }
 }
 
 bool _jsContextValid(int contextId) => contextId != null && contextId >= 0 && isContextValid(contextId);
 
+typedef DartDispatchEvent = void Function(
+    Pointer<NativeEventTarget> nativeEventTarget, Pointer<NativeString> eventType, Pointer<Void> nativeEvent, int isCustomEvent);
+
 void emitUIEvent(int contextId, Pointer<NativeEventTarget> nativePtr, Event event) {
-  print("emitUIEvent event: " + event.toString());
+  if (Config.enableDebugPrint) {
+    print("emitUIEvent event: " + event.toString());
+  }
   if (_jsContextValid(contextId)) {
     Pointer<NativeEventTarget> nativeEventTarget = nativePtr;
-    Dart_DispatchEvent dispatchEvent = nativeEventTarget.ref.dispatchEvent.asFunction();
+    DartDispatchEvent dispatchEvent = nativeEventTarget.ref.dispatchEvent.asFunction();
     Pointer<Void> nativeEvent = event.toNative().cast<Void>();
     bool isCustomEvent = event is CustomEvent;
     Pointer<NativeString> eventTypeString = stringToNativeString(event.type);
@@ -115,34 +118,34 @@ void emitUIEvent(int contextId, Pointer<NativeEventTarget> nativePtr, Event even
   }
 }
 
-void emitModuleEvent(int contextId, String moduleName, Event event, String extra) {
+void emitModuleEvent(int contextId, String moduleName, Event? event, String extra) {
   invokeModuleEvent(contextId, moduleName, event, extra);
 }
 
 // Register createScreen
-typedef Native_CreateScreen = Pointer<ScreenSize> Function(Double, Double);
-typedef Dart_CreateScreen = Pointer<ScreenSize> Function(double, double);
+typedef NativeCreateScreen = Pointer<Void> Function(Double, Double);
+typedef DartCreateScreen = Pointer<Void> Function(double, double);
 
-final Dart_CreateScreen _createScreen =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_CreateScreen>>('createScreen').asFunction();
+final DartCreateScreen _createScreen =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeCreateScreen>>('createScreen').asFunction();
 
-Pointer<ScreenSize> createScreen(double width, double height) {
+Pointer<Void> createScreen(double width, double height) {
   return _createScreen(width, height);
 }
 
 // Register evaluateScripts
-typedef Native_EvaluateScripts = Void Function(
+typedef NativeEvaluateScripts = Void Function(
     Int32 contextId, Pointer<NativeString> code, Pointer<Utf8> url, Int32 startLine);
-typedef Dart_EvaluateScripts = void Function(
+typedef DartEvaluateScripts = void Function(
     int contextId, Pointer<NativeString> code, Pointer<Utf8> url, int startLine);
 
-final Dart_EvaluateScripts _evaluateScripts =
-nativeDynamicLibrary.lookup<NativeFunction<Native_EvaluateScripts>>('evaluateScripts').asFunction();
+final DartEvaluateScripts _evaluateScripts =
+nativeDynamicLibrary.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScripts').asFunction();
 
 void evaluateScripts(int contextId, String code, String url, int line) {
   try {
     Pointer<NativeString> nativeString = stringToNativeString(code);
-    Pointer<Utf8> _url = Utf8.toUtf8(url);
+    Pointer<Utf8> _url = url.toNativeUtf8();
     try {
       if (_jsContextValid(contextId)) {
         if (kDebugMode) {
@@ -160,11 +163,11 @@ void evaluateScripts(int contextId, String code, String url, int line) {
 }
 
 // Register initJsEngine
-typedef Native_InitJSContextPool = Int32 Function(Int32 isolateHash,Int32 poolSize);
-typedef Dart_InitJSContextPool = int Function(int isolateHash, int poolSize);
+typedef NativeInitJSContextPool = Int32 Function(Int32 isolateHash, Int32 poolSize);
+typedef DartInitJSContextPool = int Function(int isolateHash, int poolSize);
 
-final Dart_InitJSContextPool _initJSContextPool =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_InitJSContextPool>>('initJSContextPool').asFunction();
+final DartInitJSContextPool _initJSContextPool =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeInitJSContextPool>>('initJSContextPool').asFunction();
 
 int initJSContextPool(int poolSize) {
   if(kDebugMode) {
@@ -174,13 +177,13 @@ int initJSContextPool(int poolSize) {
   return _initJSContextPool(isolateHash, poolSize);
 }
 
-typedef Native_DisposeContext = Void Function(Int32 contextId);
-typedef Dart_DisposeContext = void Function(int contextId);
+typedef NativeDisposeContext = Void Function(Int32 contextId);
+typedef DartDisposeContext = void Function(int contextId);
 
-final Dart_DisposeContext _disposeContext =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_DisposeContext>>('disposeContext').asFunction();
+final DartDisposeContext _disposeContext =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeDisposeContext>>('disposeContext').asFunction();
 
-void disposeBridge(int contextId) {
+void disposeContext(int contextId) {
   if(kDebugMode) {
     print("KrakenTy disposeBridge contextId[$contextId]");
   }
@@ -189,38 +192,38 @@ void disposeBridge(int contextId) {
   }
 }
 
-typedef Native_AllocateNewContext = Int32 Function(Int32 isolateHash);
-typedef Dart_AllocateNewContext = int Function(int isolateHash);
+typedef NativeAllocateNewContext = Int32 Function(Int32 isolateHash, Int32);
+typedef DartAllocateNewContext = int Function(int isolateHash, int);
 
-final Dart_AllocateNewContext _allocateNewContext =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_AllocateNewContext>>('allocateNewContext').asFunction();
+final DartAllocateNewContext _allocateNewContext =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeAllocateNewContext>>('allocateNewContext').asFunction();
 
-int allocateNewContext() {
-  int ret = _allocateNewContext(Isolate.current.hashCode);
+int allocateNewContext([int targetContextId = -1]) {
+  int ret = _allocateNewContext(Isolate.current.hashCode, targetContextId);
   if(kDebugMode) {
     print("KrakenTy allocateNewContext[$ret]");
   }
   return ret;
 }
 
-typedef Native_IsContextValid = Int32 Function(Int32 contextId);
-typedef Dart_IsContextValid = int Function(int contextId);
+typedef NativeIsContextValid = Int32 Function(Int32 contextId);
+typedef DartIsContextValid = int Function(int contextId);
 
 const int _valid = 1;
-final Dart_IsContextValid _isContextValid = nativeDynamicLibrary.lookup<NativeFunction<Native_IsContextValid>>('isContextValid').asFunction();
+final DartIsContextValid _isContextValid = nativeDynamicLibrary.lookup<NativeFunction<NativeIsContextValid>>('isContextValid').asFunction();
 
 bool isContextValid(int contextId) {
   return _isContextValid(contextId) == _valid;
 }
 
 // Regisdster reloadJsContext
-typedef Native_ReloadJSContext = Void Function(Int32 contextId);
-typedef Dart_ReloadJSContext = void Function(int contextId);
+typedef NativeReloadJSContext = Void Function(Int32 contextId);
+typedef DartReloadJSContext = void Function(int contextId);
 
-final Dart_ReloadJSContext _reloadJSContext =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_ReloadJSContext>>('reloadJsContext').asFunction();
+final DartReloadJSContext _reloadJSContext =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeReloadJSContext>>('reloadJsContext').asFunction();
 
-void reloadJSContext(int contextId) async {
+Future<void> reloadJSContext(int contextId) async {
   Completer completer = Completer<void>();
   Future.microtask(() {
     if (_jsContextValid(contextId)) {
@@ -234,21 +237,21 @@ void reloadJSContext(int contextId) async {
   return completer.future;
 }
 
-typedef Native_FlushUICommandCallback = Void Function();
-typedef Dart_FlushUICommandCallback = void Function();
+typedef NativeFlushUICommandCallback = Void Function();
+typedef DartFlushUICommandCallback = void Function();
 
-final Dart_FlushUICommandCallback _flushUICommandCallback =
-nativeDynamicLibrary.lookup<NativeFunction<Native_FlushUICommandCallback>>('flushUICommandCallback').asFunction();
+final DartFlushUICommandCallback _flushUICommandCallback =
+nativeDynamicLibrary.lookup<NativeFunction<NativeFlushUICommandCallback>>('flushUICommandCallback').asFunction();
 
 void flushUICommandCallback() {
   _flushUICommandCallback();
 }
 
-typedef Native_DispatchUITask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
-typedef Dart_DispatchUITask = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef NativeDispatchUITask = Void Function(Int32 contextId, Pointer<Void> context, Pointer<Void> callback);
+typedef DartDispatchUITask = void Function(int contextId, Pointer<Void> context, Pointer<Void> callback);
 
-final Dart_DispatchUITask _dispatchUITask =
-  nativeDynamicLibrary.lookup<NativeFunction<Native_DispatchUITask>>('dispatchUITask').asFunction();
+final DartDispatchUITask _dispatchUITask =
+  nativeDynamicLibrary.lookup<NativeFunction<NativeDispatchUITask>>('dispatchUITask').asFunction();
 
 void dispatchUITask(int contextId, Pointer<Void> context, Pointer<Void> callback) {
   _dispatchUITask(contextId, context, callback);
@@ -271,42 +274,42 @@ enum UICommandType {
 
 class UICommandItem extends Struct {
   @Int64()
-  int type;
+  external int type;
 
-  Pointer<Pointer<NativeString>> args;
-
-  @Int64()
-  int id;
+  external Pointer<Pointer<NativeString>> args;
 
   @Int64()
-  int length;
+  external int id;
 
-  Pointer nativePtr;
+  @Int64()
+  external int length;
+
+  external Pointer nativePtr;
 }
 
-typedef Native_GetUICommandItems = Pointer<Uint64> Function(Int32 contextId);
-typedef Dart_GetUICommandItems = Pointer<Uint64> Function(int contextId);
+typedef NativeGetUICommandItems = Pointer<Uint64> Function(Int32 contextId);
+typedef DartGetUICommandItems = Pointer<Uint64> Function(int contextId);
 
-final Dart_GetUICommandItems _getUICommandItems =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_GetUICommandItems>>('getUICommandItems').asFunction();
+final DartGetUICommandItems _getUICommandItems =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeGetUICommandItems>>('getUICommandItems').asFunction();
 
-typedef Native_GetUICommandItemSize = Int64 Function(Int64 contextId);
-typedef Dart_GetUICommandItemSize = int Function(int contextId);
+typedef NativeGetUICommandItemSize = Int64 Function(Int64 contextId);
+typedef DartGetUICommandItemSize = int Function(int contextId);
 
-final Dart_GetUICommandItemSize _getUICommandItemSize =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_GetUICommandItemSize>>('getUICommandItemSize').asFunction();
+final DartGetUICommandItemSize _getUICommandItemSize =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeGetUICommandItemSize>>('getUICommandItemSize').asFunction();
 
-typedef Native_ClearUICommandItems = Void Function(Int32 contextId);
-typedef Dart_ClearUICommandItems = void Function(int contextId);
+typedef NativeClearUICommandItems = Void Function(Int32 contextId);
+typedef DartClearUICommandItems = void Function(int contextId);
 
-final Dart_ClearUICommandItems _clearUICommandItems =
-    nativeDynamicLibrary.lookup<NativeFunction<Native_ClearUICommandItems>>('clearUICommandItems').asFunction();
+final DartClearUICommandItems _clearUICommandItems =
+    nativeDynamicLibrary.lookup<NativeFunction<NativeClearUICommandItems>>('clearUICommandItems').asFunction();
 
 class UICommand {
-  UICommandType type;
-  int id;
-  List<String> args;
-  Pointer nativePtr;
+  late final UICommandType type;
+  late final int id;
+  late final List<String> args;
+  late final Pointer nativePtr;
 
   String toString() {
     return 'UICommand(type: $type, id: $id, args: $args, nativePtr: $nativePtr)';
@@ -337,10 +340,10 @@ final bool isEnabledLog = kDebugMode && Platform.environment['ENABLE_KRAKEN_JS_L
 // So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
 // To ensure the fastest subsequent random access.
 List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, int commandLength, int contextId) {
-  List<UICommand> results = List(commandLength);
   List<int> rawMemory = nativeCommandItems.asTypedList(commandLength * nativeCommandSize).toList(growable: false);
 
-  for (int i = 0; i < commandLength * nativeCommandSize; i += nativeCommandSize) {
+  List<UICommand> results = List.generate(commandLength, (int _i) {
+    int i = _i * nativeCommandSize;
     UICommand command = UICommand();
 
     int typeIdCombine = rawMemory[i + typeAndIdMemOffset];
@@ -356,7 +359,7 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     command.id = id;
     int nativePtrValue = rawMemory[i + nativePtrMemOffset];
     command.nativePtr = nativePtrValue != 0 ? Pointer.fromAddress(rawMemory[i + nativePtrMemOffset]) : nullptr;
-    command.args = List(2);
+    command.args = List.empty(growable: true);
 
     int args01And02Length = rawMemory[i + args01And02LengthMemOffset];
     int args01Length;
@@ -372,12 +375,12 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
     int args01StringMemory = rawMemory[i + args01StringMemOffset];
     if (args01StringMemory != 0) {
       Pointer<Uint16> args_01 = Pointer.fromAddress(args01StringMemory);
-      command.args[0] = uint16ToString(args_01, args01Length);
+      command.args.add(uint16ToString(args_01, args01Length));
 
       int args02StringMemory = rawMemory[i + args02StringMemOffset];
       if (args02StringMemory != 0) {
         Pointer<Uint16> args_02 = Pointer.fromAddress(args02StringMemory);
-        command.args[1] = uint16ToString(args_02, args02Length);
+        command.args.add(uint16ToString(args_02, args02Length));
       }
     }
 
@@ -389,8 +392,8 @@ List<UICommand> readNativeUICommandToDart(Pointer<Uint64> nativeCommandItems, in
       printMsg += ' nativePtr: ${command.nativePtr}';
       print(printMsg);
     }
-    results[i ~/ nativeCommandSize] = command;
-  }
+    return command;
+  }, growable: false);
 
   // Clear native command.
   _clearUICommandItems(contextId);
@@ -404,8 +407,9 @@ void clearUICommand(int contextId) {
 
 
 void flushUICommand() {
-  Map<int, KrakenController> controllerMap = KrakenController.getControllerMap();
-  for (KrakenController controller in controllerMap.values) {
+  Map<int, KrakenController?> controllerMap = KrakenController.getControllerMap();
+  for (KrakenController? controller in controllerMap.values) {
+    if (controller == null) continue;
     Pointer<Uint64> nativeCommandItems = _getUICommandItems(controller.view.contextId);
     int commandLength = _getUICommandItemSize(controller.view.contextId);
 
@@ -419,7 +423,7 @@ void flushUICommand() {
 
     List<UICommand> commands = readNativeUICommandToDart(nativeCommandItems, commandLength, controller.view.contextId);
 
-    SchedulerBinding.instance.scheduleFrame();
+    SchedulerBinding.instance!.scheduleFrame();
 
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_FLUSH_UI_COMMAND_END);

@@ -24,8 +24,8 @@ _DefaultObjectElementClient _DefaultObjectElementClientFactory(ObjectElementHost
 ///https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object
 class ObjectElement extends Element implements ObjectElementHost {
 
-  ObjectElementClientFactory _objectElementClientFactory;
-  ObjectElementClient _objectElementClient;
+  late ObjectElementClientFactory _objectElementClientFactory;
+  late ObjectElementClient _objectElementClient;
 
   ObjectElement(int targetId, Pointer<NativeObjectElement> nativePtr, ElementManager elementManager)
       : super(targetId, nativePtr.ref.nativeElement, elementManager, tagName: OBJECT, defaultStyle: _defaultStyle, isIntrinsicBox: true) {
@@ -41,14 +41,14 @@ class ObjectElement extends Element implements ObjectElementHost {
 
   Future<dynamic> initElementClient() async {
     try {
-      await _objectElementClient?.initElementClient(properties);
+      await _objectElementClient.initElementClient(properties);
     } catch (e) {
       print(e);
     }
   }
 
   void initDetachCallback(final ElementManager elementManager) {
-    elementManager?.setDetachCallback(disposeClient);
+    elementManager.setDetachCallback(disposeClient);
   }
 
   @override
@@ -56,14 +56,38 @@ class ObjectElement extends Element implements ObjectElementHost {
     super.setProperty(key, value);
     switch (key) {
       case 'type':
-        _objectElementClient?.setProperty(key, value);
+        _objectElementClient.setProperty(key, value);
         break;
       case 'data':
-        _objectElementClient?.setProperty(key, value);
+        _objectElementClient.setProperty(key, value);
         break;
       default:
         break;
     }
+  }
+
+  @override
+  void willAttachRenderer() {
+    super.willAttachRenderer();
+    _objectElementClient.willAttachRenderer();
+  }
+
+  @override
+  void didAttachRenderer() {
+    super.didAttachRenderer();
+    _objectElementClient.didAttachRenderer();
+  }
+
+  @override
+  void willDetachRenderer() {
+    super.willDetachRenderer();
+    _objectElementClient.willDetachRenderer();
+  }
+
+  @override
+  void didDetachRenderer() {
+    super.didDetachRenderer();
+    _objectElementClient.didDetachRenderer();
   }
 
   // @override
@@ -73,8 +97,8 @@ class ObjectElement extends Element implements ObjectElementHost {
   // }
 
   @override
-  void updateChildTextureBox(TextureBox textureBox) {
-    addChild(textureBox);
+  void updateChildTextureBox(TextureBox? textureBox) {
+    if (textureBox != null) addChild(textureBox);
   }
 
   @override
@@ -84,7 +108,7 @@ class ObjectElement extends Element implements ObjectElementHost {
   }
 
   void disposeClient() {
-    _objectElementClient?.dispose();
+    _objectElementClient.dispose();
   }
 
 //  @override
@@ -147,5 +171,21 @@ class _DefaultObjectElementClient implements ObjectElementClient {
   @override
   void dispose() {
     print('call DefaultObjectElementClient dispose');
+  }
+
+  @override
+  void didAttachRenderer() {
+  }
+
+  @override
+  void didDetachRenderer() {
+  }
+
+  @override
+  void willAttachRenderer() {
+  }
+
+  @override
+  void willDetachRenderer() {
   }
 }

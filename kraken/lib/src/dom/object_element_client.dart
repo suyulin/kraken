@@ -3,9 +3,9 @@ import 'package:kraken/dom.dart';
 
 typedef ObjectElementClientFactory = ObjectElementClient Function(ObjectElementHost objectElementHost);
 
-ObjectElementClientFactory _objectElementFactory;
+ObjectElementClientFactory? _objectElementFactory;
 
-ObjectElementClientFactory getObjectElementClientFactory() {
+ObjectElementClientFactory? getObjectElementClientFactory() {
   return _objectElementFactory;
 }
 
@@ -14,7 +14,7 @@ void setObjectElementFactory(ObjectElementClientFactory factory) {
 }
 
 abstract class ObjectElementHost implements EventTarget {
-  updateChildTextureBox(TextureBox textureBox);
+  updateChildTextureBox(TextureBox? textureBox);
 }
 
 abstract class ObjectElementClient {
@@ -31,4 +31,9 @@ abstract class ObjectElementClient {
   dynamic getProperty(String key);
 
   void removeProperty(String key);
+
+  void willAttachRenderer();
+  void didAttachRenderer();
+  void willDetachRenderer();
+  void didDetachRenderer();
 }

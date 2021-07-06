@@ -8,11 +8,11 @@ import 'package:kraken/dom.dart';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
-import 'package:kraken/rendering.dart';
 
 typedef GestureCallback = void Function(Event);
 
-typedef MouseEventListener = void Function(String, { PointerDownEvent down, PointerUpEvent up });
+typedef MouseEventListener = void Function(String,
+    {PointerDownEvent? down, PointerUpEvent? up});
 
 typedef GetEventHandlers = Map<String, List<EventHandler>> Function();
 
@@ -20,34 +20,33 @@ mixin RenderPointerListenerMixin on RenderBox {
   /// Called when a pointer comes into contact with the screen (for touch
   /// pointers), or has its button pressed (for mouse pointers) at this widget's
   /// location.
-  PointerDownEventListener onPointerDown;
+  PointerDownEventListener? onPointerDown;
 
   /// Called when a pointer that triggered an [onPointerDown] changes position.
-  PointerMoveEventListener onPointerMove;
+  PointerMoveEventListener? onPointerMove;
 
   /// Called when a pointer that triggered an [onPointerDown] is no longer in
   /// contact with the screen.
-  PointerUpEventListener onPointerUp;
+  PointerUpEventListener? onPointerUp;
 
   /// Called when the input from a pointer that triggered an [onPointerDown] is
   /// no longer directed towards this receiver.
-  PointerCancelEventListener onPointerCancel;
+  PointerCancelEventListener? onPointerCancel;
 
   /// Called when a pointer signal occurs over this object.
-  PointerSignalEventListener onPointerSignal;
+  PointerSignalEventListener? onPointerSignal;
 
-  MouseEventListener onClick;
+  MouseEventListener? onClick;
 
-  GestureCallback onSwipe;
+  GestureCallback? onSwipe;
 
-  GestureCallback onPan;
+  GestureCallback? onPan;
 
-  GestureCallback onScale;
+  GestureCallback? onScale;
 
-  GestureCallback onLongPress;
+  GestureCallback? onLongPress;
 
-  GetEventHandlers getEventHandlers;
-
+  GetEventHandlers? getEventHandlers;
 
   @override
   void handleEvent(PointerEvent event, HitTestEntry entry) {

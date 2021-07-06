@@ -27,7 +27,7 @@ bool needInterceptorMethod(JSContext _jsContext, String _name, dynamic params) {
   }
 
   try {
-    bool ret = _interceptors[_name] != null && _interceptors[_name].interceptJSMethodCall(_jsContext, _name, params);
+    bool ret = _interceptors[_name] != null && _interceptors[_name]!.interceptJSMethodCall(_jsContext, _name, params);
     return ret;
   } catch (e) {
     print(e);
@@ -41,8 +41,8 @@ Future<dynamic> interceptorMethod(JSContext _jsContext, String _name, dynamic ar
   }
 
   try {
-    MethodCallbackInterceptor interceptor = _interceptors[_name];
-    return await interceptor.onJSMethodCall(_jsContext, _name, arguments);
+    MethodCallbackInterceptor? interceptor = _interceptors[_name];
+    return await interceptor?.onJSMethodCall(_jsContext, _name, arguments);
   } catch (e) {
     print(e);
   }

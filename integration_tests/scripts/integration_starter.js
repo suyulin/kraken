@@ -3,6 +3,7 @@ const path = require('path');
 const { startWsServer } = require('./ws_server');
 const isPortReachable = require('is-port-reachable');
 
+// Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
 function startIntegrationTest() {
   const shouldSkipBuild = /skip\-build/.test(process.argv);
   if (!shouldSkipBuild) {

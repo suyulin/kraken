@@ -6,6 +6,7 @@
 #ifndef KRAKEN_BRIDGE_EXPORT_H
 #define KRAKEN_BRIDGE_EXPORT_H
 
+
 #include <cstdint>
 #include <thread>
 
@@ -89,7 +90,7 @@ int32_t initJSContextPool(int32_t isolateHash, int poolSize);
 KRAKEN_EXPORT_C
 void disposeContext(int32_t contextId);
 KRAKEN_EXPORT_C
-int32_t allocateNewContext(int32_t isolateHash);
+int32_t allocateNewContext(int32_t isolateHash, int32_t targetContextId);
 KRAKEN_EXPORT_C
 int32_t isContextValid(int32_t contextId);
 KRAKEN_EXPORT_C

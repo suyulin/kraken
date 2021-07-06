@@ -11,40 +11,40 @@ import 'package:flutter/gestures.dart';
 
 class GestureManager {
 
-  static GestureManager _instance;
+  static GestureManager? _instance;
   GestureManager._();
 
   factory GestureManager.instance() {
     if (_instance == null) {
       _instance = GestureManager._();
 
-      _instance.gestures[EVENT_CLICK] = ClickGestureRecognizer();
-      (_instance.gestures[EVENT_CLICK] as ClickGestureRecognizer).onClick = _instance.onClick;
+      _instance!.gestures[EVENT_CLICK] = ClickGestureRecognizer();
+      (_instance!.gestures[EVENT_CLICK] as ClickGestureRecognizer).onClick = _instance!.onClick;
 
-      _instance.gestures[EVENT_SWIPE] = SwipeGestureRecognizer();
-      (_instance.gestures[EVENT_SWIPE] as SwipeGestureRecognizer).onSwipe = _instance.onSwipe;
+      _instance!.gestures[EVENT_SWIPE] = SwipeGestureRecognizer();
+      (_instance!.gestures[EVENT_SWIPE] as SwipeGestureRecognizer).onSwipe = _instance!.onSwipe;
 
-      _instance.gestures[EVENT_PAN] = PanGestureRecognizer();
-      (_instance.gestures[EVENT_PAN] as PanGestureRecognizer).onStart = _instance.onPanStart;
-      (_instance.gestures[EVENT_PAN] as PanGestureRecognizer).onUpdate = _instance.onPanUpdate;
-      (_instance.gestures[EVENT_PAN] as PanGestureRecognizer).onEnd = _instance.onPanEnd;
+      _instance!.gestures[EVENT_PAN] = PanGestureRecognizer();
+      (_instance!.gestures[EVENT_PAN] as PanGestureRecognizer).onStart = _instance!.onPanStart;
+      (_instance!.gestures[EVENT_PAN] as PanGestureRecognizer).onUpdate = _instance!.onPanUpdate;
+      (_instance!.gestures[EVENT_PAN] as PanGestureRecognizer).onEnd = _instance!.onPanEnd;
 
-      _instance.gestures[EVENT_LONG_PRESS] = LongPressGestureRecognizer();
-      (_instance.gestures[EVENT_LONG_PRESS] as LongPressGestureRecognizer).onLongPressEnd = _instance.onLongPressEnd;
+      _instance!.gestures[EVENT_LONG_PRESS] = LongPressGestureRecognizer();
+      (_instance!.gestures[EVENT_LONG_PRESS] as LongPressGestureRecognizer).onLongPressEnd = _instance!.onLongPressEnd;
 
-      _instance.gestures[EVENT_SCALE] = ScaleGestureRecognizer();
-      (_instance.gestures[EVENT_SCALE] as ScaleGestureRecognizer).onStart = _instance.onScaleStart;
-      (_instance.gestures[EVENT_SCALE] as ScaleGestureRecognizer).onUpdate = _instance.onScaleUpdate;
-      (_instance.gestures[EVENT_SCALE] as ScaleGestureRecognizer).onEnd = _instance.onScaleEnd;
+      _instance!.gestures[EVENT_SCALE] = ScaleGestureRecognizer();
+      (_instance!.gestures[EVENT_SCALE] as ScaleGestureRecognizer).onStart = _instance!.onScaleStart;
+      (_instance!.gestures[EVENT_SCALE] as ScaleGestureRecognizer).onUpdate = _instance!.onScaleUpdate;
+      (_instance!.gestures[EVENT_SCALE] as ScaleGestureRecognizer).onEnd = _instance!.onScaleEnd;
     }
-    return _instance;
+    return _instance!;
   }
 
   final Map<String, GestureRecognizer> gestures = <String, GestureRecognizer>{};
 
   List<RenderBox> _hitTestList = [];
 
-  RenderPointerListenerMixin _target;
+  RenderPointerListenerMixin? _target;
 
   void addTargetToList(RenderBox target) {
     _hitTestList.add(target);
@@ -61,7 +61,7 @@ class GestureManager {
       RenderBox renderBox = _hitTestList[i];
       Map<String, List<EventHandler>> eventHandlers = {};
       if (renderBox is RenderPointerListenerMixin && renderBox.getEventHandlers != null) {
-        eventHandlers = renderBox.getEventHandlers();
+        eventHandlers = renderBox.getEventHandlers!();
       }
 
       if (!eventHandlers.keys.isEmpty) {
@@ -93,42 +93,48 @@ class GestureManager {
       });
 
       // The target node triggered by the gesture is the bottom node of hitTest.
-      if (_hitTestList.isNotEmpty && _hitTestList[0] is RenderPointerListenerMixin) {
-        _target = _hitTestList[0] as RenderPointerListenerMixin;
-      } else {
-        _target = null;
+      // The scroll element needs to be judged by isScrollingContentBox to find the real element upwards.
+      _target = null;
+      if (_hitTestList.isNotEmpty) {
+        for (int i = 0; i < _hitTestList.length; i++) {
+          RenderBox renderBox = _hitTestList[i];
+          if ((renderBox is RenderBoxModel && !renderBox.isScrollingContentBox) || renderBox is RenderViewportBox) {
+            _target = renderBox as RenderPointerListenerMixin;
+            break;
+          }
+        }
       }
     }
 
     if (_target != null) {
-      if (_target.onPointerDown != null && event is PointerDownEvent)
-        return _target.onPointerDown(event);
-      if (_target.onPointerMove != null && event is PointerMoveEvent)
-        return _target.onPointerMove(event);
-      if (_target.onPointerUp != null && event is PointerUpEvent)
-        return _target.onPointerUp(event);
-      if (_target.onPointerCancel != null && event is PointerCancelEvent)
-        return _target.onPointerCancel(event);
-      if (_target.onPointerSignal != null && event is PointerSignalEvent)
-        return _target.onPointerSignal(event);
+      if (_target!.onPointerDown != null && event is PointerDownEvent)
+        _target!.onPointerDown!(event);
+      if (_target!.onPointerMove != null && event is PointerMoveEvent)
+        _target!.onPointerMove!(event);
+      if (_target!.onPointerUp != null && event is PointerUpEvent)
+        _target!.onPointerUp!(event);
+      if (_target!.onPointerCancel != null && event is PointerCancelEvent)
+        _target!.onPointerCancel!(event);
+      if (_target!.onPointerSignal != null && event is PointerSignalEvent)
+        _target!.onPointerSignal!(event);
     }
   }
 
-  void onClick(String eventType, { PointerDownEvent down, PointerUpEvent up }) {
-    if (_target != null && _target.onClick != null) {
-      _target.onClick(eventType, up: up);
+  void onClick(String eventType, { PointerDownEvent? down, PointerUpEvent? up }) {
+    if (_target != null && _target!.onClick != null) {
+      _target!.onClick!(eventType, up: up);
     }
   }
 
   void onSwipe(Event event) {
-    if (_target != null && _target.onSwipe != null) {
-      _target.onSwipe(event);
+    if (_target != null && _target!.onSwipe != null) {
+      _target!.onSwipe!(event);
     }
   }
 
   void onPanStart(DragStartDetails details) {
-    if (_target != null && _target.onPan != null) {
-      _target.onPan(
+    if (_target != null && _target!.onPan != null) {
+      _target!.onPan!(
           GestureEvent(
               EVENT_PAN,
               GestureEventInit(
@@ -142,8 +148,8 @@ class GestureManager {
   }
 
   void onPanUpdate(DragUpdateDetails details) {
-    if (_target != null && _target.onPan != null) {
-      _target.onPan(
+    if (_target != null && _target!.onPan != null) {
+      _target!.onPan!(
           GestureEvent(
               EVENT_PAN,
               GestureEventInit(
@@ -157,8 +163,8 @@ class GestureManager {
   }
 
   void onPanEnd(DragEndDetails details) {
-    if (_target != null && _target.onPan != null) {
-      _target.onPan(
+    if (_target != null && _target!.onPan != null) {
+      _target!.onPan!(
           GestureEvent(
               EVENT_PAN,
               GestureEventInit(
@@ -172,8 +178,8 @@ class GestureManager {
   }
 
   void onScaleStart(ScaleStartDetails details) {
-    if (_target != null && _target.onScale != null) {
-      _target.onScale(
+    if (_target != null && _target!.onScale != null) {
+      _target!.onScale!(
           GestureEvent(
               EVENT_SCALE,
               GestureEventInit( state: EVENT_STATE_START )
@@ -183,8 +189,8 @@ class GestureManager {
   }
 
   void onScaleUpdate(ScaleUpdateDetails details) {
-    if (_target != null && _target.onScale != null) {
-      _target.onScale(
+    if (_target != null && _target!.onScale != null) {
+      _target!.onScale!(
           GestureEvent(
               EVENT_SCALE,
               GestureEventInit(
@@ -198,8 +204,8 @@ class GestureManager {
   }
 
   void onScaleEnd(ScaleEndDetails details) {
-    if (_target != null && _target.onScale != null) {
-      _target.onScale(
+    if (_target != null && _target!.onScale != null) {
+      _target!.onScale!(
           GestureEvent(
               EVENT_SCALE,
               GestureEventInit( state: EVENT_STATE_END )
@@ -209,8 +215,8 @@ class GestureManager {
   }
 
   void onLongPressEnd(LongPressEndDetails details) {
-    if (_target != null && _target.onLongPress != null) {
-      _target.onLongPress(
+    if (_target != null && _target!.onLongPress != null) {
+      _target!.onLongPress!(
           GestureEvent(
               EVENT_LONG_PRESS,
               GestureEventInit(

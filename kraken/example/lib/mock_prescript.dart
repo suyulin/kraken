@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:kraken/kraken.dart';
 
-Future onJsBundleLoad(KrakenController controller) {
+Future onJsBundleLoad(KrakenController controller) async{
   String script;
   try {
     script = _getAndroidPlatformInfo();
@@ -15,7 +15,7 @@ Future onJsBundleLoad(KrakenController controller) {
 }
 
 String _getAndroidPlatformInfo() {
-  String script;
+  String script = "";
   try {
     //APP名称
     String appName = 'packageInfo.appName';
@@ -30,10 +30,10 @@ String _getAndroidPlatformInfo() {
     String sceneInstanceId = "";
 
     MediaQueryData data =
-        MediaQueryData.fromWindow(WidgetsBinding.instance.window);
+        MediaQueryData.fromWindow(WidgetsBinding.instance!.window);
     EdgeInsets insets = data.padding;
     MediaQueryData mediaQueryData = data;
-    double devicePixelRatio = mediaQueryData?.devicePixelRatio ?? 0.0;
+    double devicePixelRatio = mediaQueryData.devicePixelRatio;
 
     script = "window.device = {\n" +
         "  DeviceInfo: {\n" +
