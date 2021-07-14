@@ -50,7 +50,7 @@ class CSSBackground {
   }
 
   static bool isValidBackgroundImageValue(String value) {
-    return (value.indexOf(')') == value.length - 1) &&
+    return (value.lastIndexOf(')') == value.length - 1) &&
         (value.startsWith('url(') ||
         value.startsWith('linear-gradient(') ||
         value.startsWith('repeating-linear-gradient(') ||
