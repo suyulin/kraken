@@ -70,9 +70,9 @@ void disposeAllBridge() {
     if (std::getenv("ENABLE_KRAKEN_JS_LOG") != nullptr && strcmp(std::getenv("ENABLE_KRAKEN_JS_LOG"), "true") == 0) {
         KRAKEN_LOG(VERBOSE) << "disposeAllBridge" << std::endl;
     }
-    for (int i = 0; i <= poolIndex; i++) {
-      disposeContext(i);
-  }
+    for (int i = 0; i <= poolIndex && i < maxPoolSize; i++) {
+        disposeContext(i);
+    }
   poolIndex = 0;
   inited = false;
 }
@@ -135,7 +135,7 @@ void disposeContext(int32_t contextId) {
 
 int32_t allocateNewContext(int32_t isolateHash, int32_t targetContextId) {
   if (targetContextId == -1) {
-    targetContextId = poolIndex++;
+    targetContextId = ++poolIndex;
   }
 
   if (targetContextId >= maxPoolSize) {
@@ -149,7 +149,7 @@ int32_t allocateNewContext(int32_t isolateHash, int32_t targetContextId) {
   auto context = new kraken::JSBridge(isolateHash, targetContextId, printError);
     foundation::UICommandBuffer::instance(targetContextId)->isolateHash = isolateHash;
     contextPool[targetContextId] = context;
-  return poolIndex;
+  return targetContextId;
 }
 
 int32_t isContextValid(int32_t contextId) {
