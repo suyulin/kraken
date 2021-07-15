@@ -21,6 +21,8 @@ import 'package:kraken/foundation.dart';
 
 import 'bundle.dart';
 
+typedef RuntimeReadyHandler = void Function(KrakenController controller);
+
 // Error handler when load bundle failed.
 typedef LoadHandler = void Function(KrakenController controller);
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -420,6 +422,8 @@ class KrakenController {
 
   LoadHandler? onLoad;
 
+  RuntimeReadyHandler? onRuntimeReady;
+
   // Error handler when load bundle failed.
   LoadErrorHandler? onLoadError;
 
@@ -464,6 +468,7 @@ class KrakenController {
     KrakenNavigationDelegate? navigationDelegate,
     KrakenMethodChannel? methodChannel,
     this.onLoad,
+    this.onRuntimeReady,
     this.onLoadError,
     this.onJSError,
     this.httpClientInterceptor,
@@ -672,6 +677,9 @@ class KrakenController {
   Future<void> evalBundle() async {
     assert(!_view._disposed, "Kraken have already disposed");
     if (_bundle != null) {
+      if (onRuntimeReady != null) {
+        onRuntimeReady!(this);
+      }
       await _bundle!.eval(_view.contextId);
       // trigger DOMContentLoaded event
       module.requestAnimationFrame((_) {

@@ -47,6 +47,8 @@ class Kraken extends StatelessWidget {
 
   final LoadHandler? onLoad;
 
+  final RuntimeReadyHandler? onRuntimeReady;
+
   final JSErrorHandler ?onJSError;
 
   // Open a service to support Chrome DevTools for debugging.
@@ -99,6 +101,7 @@ class Kraken extends StatelessWidget {
     this.bundlePath,
     this.bundleContent,
     this.onLoad,
+    this.onRuntimeReady,
     this.navigationDelegate,
     this.javaScriptChannel,
     this.background,
@@ -159,6 +162,7 @@ class _KrakenRenderObjectWidget extends SingleChildRenderObjectWidget {
       bundleContent: _krakenWidget.bundleContent,
       bundleURL: _krakenWidget.bundleURL,
       bundlePath: _krakenWidget.bundlePath,
+      onRuntimeReady: _krakenWidget.onRuntimeReady,
       onLoad: _krakenWidget.onLoad,
       onLoadError: _krakenWidget.onLoadError,
       onJSError: _krakenWidget.onJSError,

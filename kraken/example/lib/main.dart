@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kraken/kraken.dart';
 import 'package:kraken_websocket/kraken_websocket.dart';
 import 'package:kraken_devtools/kraken_devtools.dart';
+import 'mock_prescript.dart';
 import 'dart:ui';
 
 void main() {
@@ -91,6 +92,8 @@ class _MyHomePageState extends State<MyBrowser> {
         child: _kraken = Kraken(
           viewportWidth: viewportSize.width - queryData.padding.horizontal,
           viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
+          onRuntimeReady: onJsBundleLoad,
+          // bundleURL: 'http://30.77.74.135:3000/build/demo.init.js',
           bundlePath: 'assets/bundle.js',
           devToolsService: ChromeDevToolsService(),
         ),
