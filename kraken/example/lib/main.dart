@@ -41,6 +41,7 @@ class MyBrowser extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyBrowser> {
+  bool highSize = false;
 
   OutlineInputBorder outlineBorder = OutlineInputBorder(
     borderSide: BorderSide(color: Colors.transparent, width: 0.0),
@@ -58,45 +59,38 @@ class _MyHomePageState extends State<MyBrowser> {
     AppBar appBar = AppBar(
         backgroundColor: Colors.black87,
         titleSpacing: 10.0,
-        title: Container(
-          height: 40.0,
-          child: TextField(
-            controller: textEditingController,
-            onSubmitted: (value) {
-              textEditingController.text = value;
-              _kraken?.loadURL(value);
-            },
-            decoration: InputDecoration(
-              hintText: 'Enter a app url',
-              hintStyle: TextStyle(color: Colors.black54, fontSize: 16.0),
-              contentPadding: const EdgeInsets.all(10.0),
-              filled: true,
-              fillColor: Colors.grey,
-              border: outlineBorder,
-              focusedBorder: outlineBorder,
-              enabledBorder: outlineBorder,
-            ),
-            style: TextStyle(color: Colors.black, fontSize: 16.0),
+        title: GestureDetector(
+          child: Container(
+            color: Colors.red,
+            height: 40,
+            child: Text("click to resize height"),
           ),
-        ),
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-      );
+          onTap: () {
+            setState(() {
+              highSize = !highSize;
+            });
+          },
+        )
+      // Here we take the value from the MyHomePage object that was created by
+      // the App.build method, and use it to set our appbar title.
+    );
 
     final Size viewportSize = queryData.size;
+    _kraken = Kraken(
+      viewportWidth: viewportSize.width - queryData.padding.horizontal,
+      viewportHeight: viewportSize.height - appBar.preferredSize.height - (highSize == true ? 10 : 40) - queryData.padding.vertical,
+      onRuntimeReady: onJsBundleLoad,
+      // bundleURL: 'http://30.77.74.135:3000/build/demo.init.js',
+      bundlePath: 'assets/bundle.js',
+      devToolsService: ChromeDevToolsService(),
+    );
     return Scaffold(
         appBar: appBar,
-        body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: _kraken = Kraken(
-          viewportWidth: viewportSize.width - queryData.padding.horizontal,
-          viewportHeight: viewportSize.height - appBar.preferredSize.height - queryData.padding.vertical,
-          onRuntimeReady: onJsBundleLoad,
-          // bundleURL: 'http://30.77.74.135:3000/build/demo.init.js',
-          bundlePath: 'assets/bundle.js',
-          devToolsService: ChromeDevToolsService(),
-        ),
-    ));
+        body: Align(
+            alignment: Alignment.topCenter,
+            // Center is a layout widget. It takes a single child and positions it
+            // in the middle of the parent.
+            child: _kraken
+        ));
   }
 }
