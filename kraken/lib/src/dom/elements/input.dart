@@ -111,11 +111,9 @@ class InputElement extends Element implements TextInputClient, TickerProvider {
   }
 
   static void setFocus(InputElement inputElement) {
-    if (InputElement.focusInputElement != inputElement) {
-      clearFocus();
-      InputElement.focusInputElement = inputElement;
-      inputElement.focus();
-    }
+    clearFocus();
+    InputElement.focusInputElement = inputElement;
+    inputElement.focus();
   }
 
   static SplayTreeMap<int, InputElement> _nativeMap = SplayTreeMap();
