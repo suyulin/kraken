@@ -4,6 +4,7 @@ import 'package:kraken_websocket/kraken_websocket.dart';
 import 'dart:ui';
 import 'dart:isolate';
 import 'package:kraken_example/mock_prescript.dart';
+import 'package:kraken/dom.dart';
 
 void main() {
   KrakenWebsocket.initialize();
@@ -98,7 +99,9 @@ class _MyHomePageState extends State<MyBrowser> {
           // bundlePath: 'assets/bundle.js',
           // bundleURL: 'http://30.77.74.86:3000/build/demo.phone.init.js',
           // bundleURL: 'https://kraken.oss-cn-hangzhou.aliyuncs.com/data/youku.min.js',
-          bundleURL: 'https://t.youku.com/yep/page/kraken/m/cvd3r6f068?isNeedBaseImage=1&wh_kraken=true&wh_weex=true',
+          bundleURL: 'https://t.youku.com/yep/page/kraken/m/hlxjr7?wh_kraken=true&wh_weex=true&isNeedBaseImage=1&hideNavigatorBar=true',
+          // bundleURL: 'https://t.youku.com/yep/page/kraken/m/cvd3r6f068?isNeedBaseImage=1&wh_kraken=true&wh_weex=true',
+          // bundleURL: 'https://t.youku.com/yep/page/kraken/m/cvd3r6f068?isNeedBaseImage=1&wh_kraken=true&wh_weex=true',
           // bundleURL: 'https://pre.t.youku.com/yep/page/kraken/m_pre/l1y89glan0?isNeedBaseImage=1&env=pre',
           // bundleURL: 'http://30.77.74.135:3000/build/demo.phone.init.js',
           // bundleURL: 'http://30.77.74.135:3000/build/demo.init.js',

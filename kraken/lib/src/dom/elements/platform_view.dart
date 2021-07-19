@@ -17,6 +17,7 @@ import 'package:kraken/css.dart';
 import 'package:kraken/dom.dart';
 import 'package:kraken/module.dart';
 import 'package:kraken/rendering.dart';
+import 'package:kraken/src/config.dart';
 import 'package:kraken/src/dom/platform_view_client.dart';
 import 'package:kraken/src/gesture/scroll_rect_info.dart';
 
@@ -135,44 +136,59 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   @override
   void setProperty(String key, value) {
     super.setProperty(key, value);
-    if (key != null && key.isNotEmpty) {
-      componentParams[key] = value is String ? value : json.encode(value);
-    }
-
-    if (key == TYPE) {
-      (renderBoxModel as RenderIntrinsic)..child = null;
-      componentType = value;
-      if(properties['loading'] != 'lazy') {
-        _buildPlatformRenderBox();
-      } else {
-        renderBoxModel?.addIntersectionChangeListener(_handleIntersectionChange);
+    try {
+      if (key != null && key.isNotEmpty) {
+        componentParams[key] = value is String ? value : json.encode(value);
       }
-      // addChild(sizedBox);
-      platformViewComponent?.setProperty(key, value);
-    } else if (key == WIDTH || key == HEIGHT) {
-      setStyle(key, value);
-    } else {
-      platformViewComponent?.setProperty(key, value);
+
+      if (key == TYPE) {
+        (renderBoxModel as RenderIntrinsic)..child = null;
+        componentType = value;
+        if (properties['loading'] != 'lazy') {
+          _buildPlatformRenderBox();
+        } else {
+          renderBoxModel
+              ?.addIntersectionChangeListener(_handleIntersectionChange);
+        }
+        // addChild(sizedBox);
+        platformViewComponent?.setProperty(key, value);
+      } else if (key == WIDTH || key == HEIGHT) {
+        setStyle(key, value);
+      } else {
+        platformViewComponent?.setProperty(key, value);
+      }
+    } catch (e) {
+      if (Config.enableDebugPrint) {
+        print(e);
+        rethrow;
+      }
     }
   }
 
 
   void _handleIntersectionChange(IntersectionObserverEntry entry) {
-
-    // When appear
-    if (entry.isIntersecting) {
-      if(kDebugMode || _debugLifecycle) {
-        print('PlatformView[$targetId] entry.isIntersecting[${entry.isIntersecting}] isIntersecting lazyload[]');
-      }
-      _buildPlatformRenderBox();
-    }
-
     try {
-      platformViewComponent?.onIntersectionChange(entry);
+      // When appear
+      if (entry.isIntersecting) {
+        if (kDebugMode || _debugLifecycle) {
+          print(
+              'PlatformView[$targetId] entry.isIntersecting[${entry.isIntersecting}] isIntersecting lazyload[]');
+        }
+        _buildPlatformRenderBox();
+      }
+
+      try {
+        platformViewComponent?.onIntersectionChange(entry);
+      } catch (e) {
+        print(e);
+      }
     } catch (e) {
       print(e);
+      if (Config.enableDebugPrint) {
+        print(e);
+        rethrow;
+      }
     }
-
   }
 
   @override
