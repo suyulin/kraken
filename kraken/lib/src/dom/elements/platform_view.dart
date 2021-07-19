@@ -76,8 +76,24 @@ class PlatformViewElement extends Element implements PlatformViewHost {
             isIntrinsicBox: true) {
     _nativeMap[nativePlatformViewElement.address] = this;
     nativePlatformViewElement.ref.call = nativeCall;
-    _width = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_WIDTH, viewportSize)!;
-    _height = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_HEIGHT, viewportSize)!;
+
+    double? rootFontSize;
+    double? fontSize;
+
+    if (renderBoxModel != null) {
+      rootFontSize = renderBoxModel!.elementDelegate.getRootElementFontSize();
+      fontSize = renderBoxModel!.renderStyle.fontSize;
+    }
+
+    _width = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_WIDTH,
+        viewportSize: viewportSize,
+        rootFontSize: rootFontSize,
+        fontSize: fontSize)!;
+
+    _height = CSSLength.toDisplayPortValue(ELEMENT_DEFAULT_HEIGHT,
+        viewportSize: viewportSize,
+        rootFontSize: rootFontSize,
+        fontSize: fontSize)!;
 
     try {
       _jsContext = JSContext(elementManager.controller.bundleURL, '${elementManager.controller.view.contextId}');
@@ -214,10 +230,30 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   void setStyle(String key, value) {
     super.setStyle(key, value);
     if (key == WIDTH) {
-      width = CSSLength.toDisplayPortValue(value, viewportSize) ?? width;
+      double? rootFontSize;
+      double? fontSize;
+      if (renderBoxModel != null) {
+        rootFontSize = renderBoxModel!.elementDelegate.getRootElementFontSize();
+        fontSize = renderBoxModel!.renderStyle.fontSize;
+      }
+
+      width = CSSLength.toDisplayPortValue(value,
+              viewportSize: viewportSize,
+              rootFontSize: rootFontSize,
+              fontSize: fontSize) ?? width;
+
       componentParams[_displayPortWidth] = width;
     } else if (key == HEIGHT) {
-      height = CSSLength.toDisplayPortValue(value, viewportSize) ?? height;
+      double? rootFontSize;
+      double? fontSize;
+      if (renderBoxModel != null) {
+        rootFontSize = renderBoxModel!.elementDelegate.getRootElementFontSize();
+        fontSize = renderBoxModel!.renderStyle.fontSize;
+      }
+      height = CSSLength.toDisplayPortValue(value,
+              viewportSize: viewportSize,
+              rootFontSize: rootFontSize,
+              fontSize: fontSize) ?? height;
       componentParams[_displayPortHeight] = height;
     }
     platformViewComponent?.setStyle(key, value);
