@@ -33,7 +33,7 @@ public class MainActivity extends FlutterActivity {
       }
     });
 
-    if(sAutoJump< 3) {
+    if(sAutoJump< 0) {
       new Handler(getMainLooper()).postDelayed(new Runnable() {
         @Override
         public void run() {
