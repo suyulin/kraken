@@ -16,7 +16,7 @@ A high-performance, web standards-compliant rendering engine.
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-  s.platform = :ios, '8.0'
+  s.platform = :ios, '9.0'
   s.vendored_frameworks = 'kraken_bridge.framework'
   s.prepare_command = 'bash prepare.sh'
 

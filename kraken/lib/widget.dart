@@ -250,7 +250,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
   Map _loadInfo = Map();
   bool _hasFinishRenderFirstTime = false;
   bool _hasBundleReady = false;
-
+  VoidCallback? _ordinaryOnMetricsChanged;
   _KrakenWidgetState();
 
   @override
@@ -258,6 +258,13 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     if (_controller == null) {
       return Container();
     }
+
+    // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
+    // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
+    if (window.physicalSize == Size.zero) {
+      return Container();
+    }
+
     if (_hasBundleReady == true && _hasFinishRenderFirstTime != true) {
       handleFirstRender();
     }
@@ -281,8 +288,33 @@ class _KrakenWidgetState extends State<KrakenWidget> {
   @override
   void initState() {
     super.initState();
-    // Bootstrap binding.
-    init();
+
+
+    // window.physicalSize are Size.zero when app first loaded. This only happened on Android and iOS physical devices with release build.
+    // We should wait for onMetricsChanged when window.physicalSize get updated from Flutter Engine.
+
+    _ordinaryOnMetricsChanged = window.onMetricsChanged;
+
+    if (window.physicalSize == Size.zero) {
+      window.onMetricsChanged = () async {
+        if (window.physicalSize == Size.zero) {
+          window.onMetricsChanged = _ordinaryOnMetricsChanged;
+          return;
+        }
+        // Bootstrap binding.
+        init();
+        setState(() {});
+        // Should proxy to ordinary window.onMetricsChanged callbacks.
+        if (_ordinaryOnMetricsChanged != null) {
+          _ordinaryOnMetricsChanged!();
+          // Recover ordinary callback to window.onMetricsChanged
+          window.onMetricsChanged = _ordinaryOnMetricsChanged;
+        }
+      };
+    } else {
+      // Bootstrap binding.
+      init();
+    }
   }
 
   @override
@@ -332,6 +364,11 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     double viewportWidth = widget.viewportWidth ?? window.physicalSize.width / window.devicePixelRatio;
     double viewportHeight = widget.viewportHeight ?? window.physicalSize.height / window.devicePixelRatio;
 
+    //@set default size
+    if (viewportWidth == 0.0 || viewportHeight == 0.0) {
+      viewportWidth = 350;
+      viewportHeight = 150;
+    };
 
     _controller = KrakenController.getControllerOfName(widget.name) ??
         KrakenController(
@@ -654,11 +691,8 @@ class KrakenRenderConstrainedBox extends RenderProxyBox {
         if (_controller.view != null) {
           traverseElement(_controller.view.document!.documentElement, (element) {
             if (element.isRendererAttached) {
-
-              // element.setStyle(key, value)
-              // element.setStyle(key, value)
-              // element.style.applyTargetProperties();
-              // element.renderBoxModel?.markNeedsLayout();
+              element.style.applyTargetProperties();
+              element.renderBoxModel?.markNeedsLayout();
             }
           });
         }
