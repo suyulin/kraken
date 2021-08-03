@@ -2,6 +2,12 @@ buildscript {
     repositories {
         google()
         jcenter()
+        maven {
+            url 'http://mvnrepo.alibaba-inc.com/mvn/repository'
+        }
+        maven {
+            url "http://flutter-storage.alibaba-inc.com/youku"
+        }
     }
 
     dependencies {
@@ -13,6 +19,12 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven {
+            url 'http://mvnrepo.alibaba-inc.com/mvn/repository'
+        }
+        maven {
+            url "http://flutter-storage.alibaba-inc.com/youku"
+        }
     }
 }
 
