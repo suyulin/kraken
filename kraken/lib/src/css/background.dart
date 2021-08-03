@@ -153,7 +153,7 @@ class CSSBackground {
       Size viewportSize = renderStyle.viewportSize;
       double rootFontSize = renderBoxModel.elementDelegate.getRootElementFontSize();
       double fontSize = renderStyle.fontSize;
-      
+
       switch (method.name) {
         case 'linear-gradient':
         case 'repeating-linear-gradient':
@@ -395,7 +395,7 @@ class CSSBackground {
           Size viewportSize = renderStyle.viewportSize;
           double rootFontSize = renderBoxModel.elementDelegate.getRootElementFontSize();
           double fontSize = renderStyle.fontSize;
-          
+
           for (int i = 1; i < strings.length; i++) {
             if (CSSPercentage.isPercentage(strings[i])) {
               stop = CSSPercentage.parsePercentage(strings[i]);
