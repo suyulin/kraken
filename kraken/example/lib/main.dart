@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:kraken/kraken.dart';
-import 'package:kraken_websocket/kraken_websocket.dart';
+// import 'package:kraken_websocket/kraken_websocket.dart';
 import 'dart:ui';
 import 'dart:isolate';
 import 'package:kraken_example/mock_prescript.dart';
 import 'package:kraken/dom.dart';
+import 'package:kraken/bridge.dart';
 
 void main() {
-  KrakenWebsocket.initialize();
+  // KrakenWebsocket.initialize();
+  kKrakenJSBridgePoolSize = 10000;
   runApp(MyApp());
 }
 
