@@ -20,7 +20,7 @@ const String ENABLE_PERFORMANCE_OVERLAY = 'KRAKEN_ENABLE_PERFORMANCE_OVERLAY';
 const String DEFAULT_BUNDLE_PATH = 'assets/default.js';
 
 
-typedef ExtraBundleLoader = Future<ByteData> Function(String url, {String ua});
+typedef ExtraBundleLoader = Future<ByteData?> Function(String url, {String ua});
 
 ExtraBundleLoader? bundleLoader;
 
