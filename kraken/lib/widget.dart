@@ -107,7 +107,7 @@ class _KrakenAdapterWidget extends StatefulWidget {
 
 class _KrakenAdapterWidgetPropertiesState extends State<_KrakenAdapterWidget> {
   Map<String, dynamic> _properties;
-  WidgetCreator _widgetCreator;
+  final WidgetCreator _widgetCreator;
   _KrakenAdapterWidgetPropertiesState(this._widgetCreator, this._properties);
 
   void onAttributeChanged(Map<String, dynamic> properties) {
