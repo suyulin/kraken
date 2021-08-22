@@ -156,7 +156,7 @@ class KrakenWidget extends StatefulWidget {
   final KrakenNavigationDelegate? navigationDelegate;
 
   // A method channel for receiving messaged from JavaScript code and sending message to JavaScript.
-  final KrakenJavaScriptChannel? javaScriptChannel;
+  final KrakenMethodChannel? javaScriptChannel;
 
   final LoadErrorHandler? onLoadError;
 
@@ -186,6 +186,9 @@ class KrakenWidget extends StatefulWidget {
 
   final HttpClientInterceptor? httpClientInterceptor;
 
+  final UriParser? uriParser;
+
+
   const KrakenWidget(
       {Key? key,
       @required this.viewportWidth,
@@ -211,6 +214,7 @@ class KrakenWidget extends StatefulWidget {
       this.animationController,
       this.debugEnableInspector,
       this.onJSError,
+      this.uriParser,
       required this.name})
       : _dartKrakenController = dartKrakenController,
         super(key: key);

@@ -173,7 +173,7 @@ class KrakenViewController {
   late RenderViewportBox viewport;
 
   void evaluateJavaScripts(String code, [String source = 'kraken://']) {
-    assert(!_disposed, "Kraken have already disposed");
+    assert(!_disposed, 'Kraken have already disposed');
     if (kDebugMode) {
       print("KrakenTy evaluateScripts evaluateJavaScripts contextId[$contextId] url[$code]");
     }
@@ -214,7 +214,7 @@ class KrakenViewController {
 
   // export Uint8List bytes from rendered result.
   Future<Uint8List> toImage(double devicePixelRatio, [int eventTargetId = HTML_ID]) {
-    assert(!_disposed, "Kraken have already disposed");
+    assert(!_disposed, 'Kraken have already disposed');
     Completer<Uint8List> completer = Completer();
     try {
       if (!_elementManager.existsTarget(eventTargetId)) {
@@ -326,6 +326,16 @@ class KrakenViewController {
     }
   }
 
+  void setRenderStyle(int targetId, String key, String value) {
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_SET_RENDER_STYLE_START, uniqueId: targetId);
+    }
+    _elementManager.setRenderStyle(targetId, key, value);
+    if (kProfileMode) {
+      PerformanceTiming.instance().mark(PERF_SET_RENDER_STYLE_END, uniqueId: targetId);
+    }
+  }
+
   void setProperty(int targetId, String key, String value) {
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_SET_PROPERTIES_START, uniqueId: targetId);
@@ -405,6 +415,8 @@ class KrakenController {
   static SplayTreeMap<int, KrakenController?> _controllerMap = SplayTreeMap();
   static Map<String, int> _nameIdMap = Map();
 
+  UriParser? uriParser;
+
   static KrakenController? getControllerOfJSContextId(int? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
       return null;
@@ -481,7 +493,8 @@ class KrakenController {
     this.onLoadError,
     this.onJSError,
     this.httpClientInterceptor,
-    this.devToolsService
+    this.devToolsService,
+    this.uriParser
   })  : _name = name,
         _bundleURL = bundleURL,
         _bundlePath = bundlePath,
@@ -510,17 +523,22 @@ class KrakenController {
       PerformanceTiming.instance().mark(PERF_VIEW_CONTROLLER_INIT_END);
     }
 
-    _module = KrakenModuleController(this, _view.contextId);
-    assert(!_controllerMap.containsKey(_view.contextId),
-        "found exist contextId of KrakenController, contextId: ${_view.contextId}");
-    _controllerMap[_view.contextId] = this;
+    final int contextId = _view.contextId;
+
+    _module = KrakenModuleController(this, contextId);
+
+    assert(!_controllerMap.containsKey(contextId),
+        'found exist contextId of KrakenController, contextId: $contextId');
+    _controllerMap[contextId] = this;
     assert(!_nameIdMap.containsKey(name), 'found exist name of KrakenController, name: $name');
     if (name != null) {
-      _nameIdMap[name] = _view.contextId;
+      _nameIdMap[name] = contextId;
     }
 
-    if (httpClientInterceptor != null) {
-      setupHttpOverrides(httpClientInterceptor!, controller: this);
+    setupHttpOverrides(httpClientInterceptor, contextId: contextId);
+
+    if (uriParser == null) {
+      uriParser = UriParser();
     }
 
     if (devToolsService != null) {
@@ -544,12 +562,27 @@ class KrakenController {
   KrakenBundle? _bundle;
   KrakenBundle? get bundle => _bundle;
 
+  Uri get referrer {
+    if (bundleURL != null) {
+      return Uri.parse(bundleURL!);
+    } else if (bundlePath != null) {
+      return Directory(bundlePath!).uri;
+    } else {
+      return fallbackBundleUri(_view.contextId);
+    }
+  }
+
+  static Uri fallbackBundleUri(int id) {
+    // The fallback origin uri, like `vm://bundle/0`
+    return Uri(scheme: 'vm', host: 'bundle', path: '$id');
+  }
+
   void setNavigationDelegate(KrakenNavigationDelegate delegate) {
     _view.navigationDelegate = delegate;
   }
 
   Future<void> unload() async {
-    assert(!_view._disposed, "Kraken have already disposed");
+    assert(!_view._disposed, 'Kraken have already disposed');
     RenderObject root = _view.getRootRenderObject();
     RenderObject? parent = root.parent as RenderObject?;
     RenderObject? previousSibling;
@@ -587,6 +620,10 @@ class KrakenController {
     return completer.future;
   }
 
+  String _href = '';
+  String get href => _href;
+  set href(String value) => _href = value;
+
   // reload current kraken view.
   Future<void> reload() async {
     if (devToolsService != null) {
@@ -603,7 +640,7 @@ class KrakenController {
   }
 
   Future<void> reloadUrl(String url) async {
-    assert(!_view._disposed, "Kraken have already disposed");
+    assert(!_view._disposed, 'Kraken have already disposed');
     _bundleURL = url;
     await reload();
   }
@@ -652,7 +689,7 @@ class KrakenController {
     String? bundlePath,
     String? bundleURL
   }) async {
-    assert(!_view._disposed, "Kraken have already disposed");
+    assert(!_view._disposed, 'Kraken have already disposed');
 
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_JS_BUNDLE_LOAD_START);
@@ -661,20 +698,24 @@ class KrakenController {
     _bundleContent = bundleContent ?? _bundleContent;
     _bundlePath =  bundlePath ?? _bundlePath;
     _bundleURL =  bundleURL ?? _bundleURL;
+
     String? url = _bundleURL ?? _bundlePath ?? getBundleURLFromEnv() ?? getBundlePathFromEnv();
 
     if (url == null && methodChannel is KrakenNativeChannel) {
       url = await (methodChannel as KrakenNativeChannel).getUrl();
     }
 
+    url = url ?? '';
     if (onLoadError != null) {
       try {
-        _bundle = await KrakenBundle.getBundle(url ?? '', contentOverride: _bundleContent, contextId: view.contextId);
+        _bundle = await KrakenBundle.getBundle(url, contentOverride: _bundleContent, contextId: view.contextId);
       } catch (e, stack) {
         onLoadError!(FlutterError(e.toString()), stack);
       }
     } else {
-      _bundle = await KrakenBundle.getBundle(url ?? '', contentOverride: _bundleContent, contextId: view.contextId);
+      _bundle = await KrakenBundle.getBundle(url, contentOverride: _bundleContent, contextId: view.contextId);
+      KrakenController controller = KrakenController.getControllerOfJSContextId(view.contextId)!;
+      controller.href = url;
     }
 
     if (kProfileMode) {
@@ -684,7 +725,7 @@ class KrakenController {
 
   // execute preloaded javascript source
   Future<void> evalBundle() async {
-    assert(!_view._disposed, "Kraken have already disposed");
+    assert(!_view._disposed, 'Kraken have already disposed');
     if (_bundle != null) {
       await _bundle!.eval(_view.contextId);
       // trigger DOMContentLoaded event
