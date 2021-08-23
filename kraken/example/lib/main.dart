@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kraken Browser',
       // theme: ThemeData.dark(),
-      home: MyBrowser(title: "title",),
+      home: MyBrowser(title: 'title',),
     );
   }
 }

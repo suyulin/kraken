@@ -102,12 +102,12 @@ class PlatformViewElement extends Element implements PlatformViewHost {
       print(e);
     }
     if (Platform.isAndroid && false) {
-      super.setProperty("loading", 'lazy');
+      super.setProperty('loading', 'lazy');
     } else {
-      super.setProperty("loading", "immediately");
+      super.setProperty('loading', 'immediately');
     }
 
-    addEventListener("intersectionchange", (e) {
+    addEventListener('intersectionchange', (e) {
       // if(kDebugMode && false) {
       //   print('PlatformView[$targetId] intersectionchange');
       // }
@@ -130,8 +130,8 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   static const String WIDTH = 'width';
   static const String HEIGHT = 'height';
 
-  static const String _displayPortWidth = "displayPortWidth";
-  static const String _displayPortHeight = "displayPortHeight";
+  static const String _displayPortWidth = 'displayPortWidth';
+  static const String _displayPortHeight = 'displayPortHeight';
 
   @override
   void setProperty(String key, value) {
@@ -294,7 +294,7 @@ class PlatformViewElement extends Element implements PlatformViewHost {
   void _buildPlatformRenderBox() {
     if(platformViewComponent == null) {
       if(kDebugMode || _debugLifecycle) {
-        print("PlatformView[$targetId] _buildPlatformRenderBox");
+        print('PlatformView[$targetId] _buildPlatformRenderBox');
       }
       // renderBoxModel?.removeIntersectionChangeListener(_handleIntersectionChange);
       platformViewComponent = platformViewComponentFactory(
@@ -327,7 +327,7 @@ class PlatformViewElement extends Element implements PlatformViewHost {
     super.attachTo(parent, after: after);
     if(kDebugMode || _debugLifecycle) {
       print('PlatformView[$targetId] attachTo');
-      print("${hashCode} + attachTo element");
+      print('${hashCode} + attachTo element');
     }
     try {
       platformViewComponent?.onAttachTo(parent, after: after);
@@ -349,7 +349,7 @@ class PlatformViewElement extends Element implements PlatformViewHost {
     super.detach();
     if(kDebugMode || _debugLifecycle) {
       print('PlatformView[$targetId] detach');
-      print("${hashCode} + detach");
+      print('${hashCode} + detach');
     }
     try {
       platformViewComponent?.onDetach();

@@ -8,7 +8,7 @@ class JSContext {
   }
 
   Map toMap() => {
-        "url": url,
-        "id": id,
+        'url': url,
+        'id': id,
       };
 }

@@ -358,8 +358,8 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     _loadInfo['loadBundleStart'] = DateTime.now().millisecondsSinceEpoch;
     _loadInfo['cacheType'] =
         widget.bundleContent != null && widget.bundleContent!.isNotEmpty
-            ? "cache"
-            : "request";
+            ? 'cache'
+            : 'request';
     int? last;
     int? current;
     int? delta;
@@ -398,7 +398,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     delta = current - last;
     last = current;
     if (debugPerformance) {
-      print("KrakenTyPerformance create controller pass [$delta]");
+      print('KrakenTyPerformance create controller pass [$delta]');
     }
     if (_controllerValid(_controller)) {
       try {
@@ -413,7 +413,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     delta = current - last;
     last = current;
     if (debugPerformance) {
-      print("KrakenTyPerformance call onload pass [$delta]");
+      print('KrakenTyPerformance call onload pass [$delta]');
     }
 
     if (_controllerValid(_controller)) {
@@ -429,7 +429,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     last = current;
     _loadInfo['loadBundleTime'] = delta;
     if (debugPerformance) {
-      print("KrakenTyPerformance load bundle pass [$delta]");
+      print('KrakenTyPerformance load bundle pass [$delta]');
     }
 
     if (_controllerValid(_controller)) {
@@ -445,7 +445,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     delta = current - last;
     last = current;
     if (debugPerformance) {
-      print("KrakenTyPerformance call onBundleReady controller pass [$delta]");
+      print('KrakenTyPerformance call onBundleReady controller pass [$delta]');
     }
 
     int _loadBundleFinishTime = DateTime.now().millisecondsSinceEpoch;
@@ -459,7 +459,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     last = current;
     _loadInfo['runBundleTime'] = delta;
     if (debugPerformance) {
-      print("KrakenTyPerformance run bundle pass [$delta]");
+      print('KrakenTyPerformance run bundle pass [$delta]');
     }
 
     int _runBundleStartFinishTime = DateTime.now().millisecondsSinceEpoch;
@@ -479,7 +479,7 @@ class _KrakenWidgetState extends State<KrakenWidget> {
     delta = current - last;
     last = current;
     if (debugPerformance) {
-      print("KrakenTyPerformance call onJSRuntimeReady pass [$delta]");
+      print('KrakenTyPerformance call onJSRuntimeReady pass [$delta]');
     }
     if (_controllerValid(_controller)) {
       setState(() {});
@@ -674,7 +674,7 @@ class KrakenRenderConstrainedBox extends RenderProxyBox {
     if(_controller == null){
       return;
     }
-    print("tylorvan check id[$id]->[$width,$height]");
+    print('tylorvan check id[$id]->[$width,$height]');
     bool viewportWidthHasChanged = _controller.view.viewportWidth != width;
     bool viewportHeightHasChanged = _controller.view.viewportHeight != height;
     Size viewportSize = Size(width, height);
