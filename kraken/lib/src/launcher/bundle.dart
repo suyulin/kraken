@@ -60,6 +60,9 @@ abstract class KrakenBundle {
 
     KrakenBundle bundle;
 
+    if (kDebugMode) {
+      print('Kraken getting bundle for contextId: $contextId, path: $path');
+    }
     if (contentOverride != null && contentOverride.isNotEmpty) {
       bundle = RawBundle(contentOverride, Uri.parse(path));
     } else {

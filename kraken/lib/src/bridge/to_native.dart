@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:ffi';
 import 'dart:isolate';
+import 'dart:io';
+
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
@@ -12,8 +14,8 @@ import 'package:kraken/src/config.dart';
 import 'dart:io';
 
 import 'from_native.dart';
-import 'platform.dart';
 import 'native_types.dart';
+import 'platform.dart';
 
 // Steps for using dart:ffi to call a C function from Dart:
 // 1. Import dart:ffi.
@@ -23,9 +25,14 @@ import 'native_types.dart';
 // 5. Get a reference to the C function, and put it into a variable.
 // 6. Call the C function.
 
-typedef DartGetUserAgent = Pointer<Utf8> Function(Pointer<NativeKrakenInfo>);
+String? _krakenUserAgent;
+
+void setKrakenUserAgent(String userAgent) {
+  _krakenUserAgent = userAgent;
+}
 
 class KrakenInfo {
+
   final Pointer<NativeKrakenInfo> _nativeKrakenInfo;
   static String extraInfoStr = "Youku/1.22.4 +";
 
@@ -51,22 +58,8 @@ class KrakenInfo {
     return _nativeKrakenInfo.ref.system_name.toDartString();
   }
 
-  String get extraInfo {
-    if (_nativeKrakenInfo.ref.extra_info == nullptr) return '';
-    return (_nativeKrakenInfo.ref.extra_info).toDartString();
-  }
-
-  void _updateExtraInfo(String extraInfo) {
-    if (_nativeKrakenInfo.ref != nullptr) {
-      _nativeKrakenInfo.ref.extra_info = (extraInfo).toNativeUtf8();
-    }
-  }
-
   String get userAgent {
-    if (_nativeKrakenInfo.ref.getUserAgent == nullptr) return '';
-    _updateExtraInfo("$extraInfoStr");
-    DartGetUserAgent getUserAgent = _nativeKrakenInfo.ref.getUserAgent.asFunction();
-    return getUserAgent(_nativeKrakenInfo).toDartString();
+    return _krakenUserAgent ?? '$appName/$appVersion ($systemName; $appName/$appRevision)';
   }
 }
 
