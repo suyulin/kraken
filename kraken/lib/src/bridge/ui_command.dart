@@ -48,7 +48,7 @@ class JSContextCommands {
     if (canMerge == true) {
       bool merged = false;
       if (targetIds.contains(targetId)) {
-        if (cacheCommands[targetId]!.length == 0) {
+        if (cacheCommands[targetId]!.isEmpty) {
           mergedCommands = MergedCommands(targetId, canMerge: true,);
           mergedCommands.commands.add(command);
           cacheCommands[targetId]!.add(mergedCommands);

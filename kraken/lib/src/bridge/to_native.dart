@@ -34,7 +34,7 @@ void setKrakenUserAgent(String userAgent) {
 class KrakenInfo {
 
   final Pointer<NativeKrakenInfo> _nativeKrakenInfo;
-  static String extraInfoStr = "Youku/1.22.4 +";
+  static String extraInfoStr = 'Youku/1.22.4 +';
 
   KrakenInfo(Pointer<NativeKrakenInfo> info) : _nativeKrakenInfo = info;
 
@@ -59,7 +59,8 @@ class KrakenInfo {
   }
 
   String get userAgent {
-    return _krakenUserAgent ?? '$appName/$appVersion ($systemName; $appName/$appRevision)';
+    String _userAgent = _krakenUserAgent ?? '$appName/$appVersion ($systemName; $appName/$appRevision)';
+    return '$_userAgent $extraInfoStr';
   }
 }
 
@@ -102,7 +103,7 @@ typedef DartDispatchEvent = void Function(
 
 void emitUIEvent(int contextId, Pointer<NativeEventTarget> nativePtr, Event event) {
   if (Config.enableDebugPrint) {
-    print("emitUIEvent event: " + event.toString());
+    print('emitUIEvent event: ' + event.toString());
   }
 
   if(KrakenController.getControllerOfJSContextId(contextId) == null) {
@@ -162,7 +163,7 @@ void evaluateScripts(int contextId, String code, String url, int line) {
     try {
       if (_jsContextValid(contextId)) {
         if (kDebugMode) {
-          print("KrakenTy evaluateScripts contextId[$contextId] url[$url]");
+          print('KrakenTy evaluateScripts contextId[$contextId] url[$url]');
         }
         _evaluateScripts(contextId, nativeString, _url, line);
       }
@@ -195,7 +196,7 @@ final DartInitJSContextPool _initJSContextPool =
 
 int initJSContextPool(int poolSize) {
   if(kDebugMode) {
-    print("KrakenTy initJSContextPool poolSize[$poolSize]");
+    print('KrakenTy initJSContextPool poolSize[$poolSize]');
   }
   int isolateHash = Isolate.current.hashCode;
   return _initJSContextPool(isolateHash, poolSize);
@@ -209,7 +210,7 @@ final DartDisposeContext _disposeContext =
 
 void disposeContext(int contextId) {
   if(kDebugMode) {
-    print("KrakenTy disposeBridge contextId[$contextId]");
+    print('KrakenTy disposeBridge contextId[$contextId]');
   }
   if (_jsContextValid(contextId)) {
     _disposeContext(contextId);
@@ -225,7 +226,7 @@ final DartAllocateNewContext _allocateNewContext =
 int allocateNewContext([int targetContextId = -1]) {
   int ret = _allocateNewContext(Isolate.current.hashCode, targetContextId);
   if(kDebugMode) {
-    print("KrakenTy allocateNewContext[$ret]");
+    print('KrakenTy allocateNewContext[$ret]');
   }
   return ret;
 }
@@ -252,7 +253,7 @@ Future<void> reloadJSContext(int contextId) async {
   Future.microtask(() {
     if (_jsContextValid(contextId)) {
       if(kDebugMode) {
-        print("KrakenTy reloadJSContext contextId[$contextId]");
+        print('KrakenTy reloadJSContext contextId[$contextId]');
       }
       _reloadJSContext(contextId);
     }
@@ -465,7 +466,7 @@ void flushUICommand() {
         print('[TyPerformance] flushUICommand -> jscontextID [${controller.view.contextId}][UICommand(${command
             .toString()})');
         if(Config.enableDebugPrint) {
-          Timeline.startSync("flushUICommand_single", arguments: {"INFO": command.toString()});
+          Timeline.startSync('flushUICommand_single', arguments: {'INFO': command.toString()});
         }
       }
       try {
