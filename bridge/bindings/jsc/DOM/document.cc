@@ -194,6 +194,10 @@ JSDocument::JSDocument(JSContext *context) : JSNode(context, "Document") {
     JSElement::defineElement("script", [](JSContext *context) -> ElementInstance * {
       return new JSScriptElement::ScriptElementInstance(JSScriptElement::instance(context));
     });
+
+    JSElement::defineElement("iframe", [](JSContext *context) -> ElementInstance * {
+      return new JSIframeElement::IframeElementInstance(JSIframeElement::instance(context));
+    });
   }
 }
 
