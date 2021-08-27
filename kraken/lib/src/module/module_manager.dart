@@ -54,7 +54,8 @@ class ModuleManager {
   String invokeModule(String moduleName, String method, dynamic params, InvokeModuleCallback callback) {
     ModuleCreator? creator = _creatorMap[moduleName];
     if (creator == null) {
-      throw Exception('ModuleManager: Can not find module of name: $moduleName');
+      // throw Exception('ModuleManager: Can not find module of name: $moduleName');
+      return 'Exception::ModuleManager: Can not find module of name: $moduleName';
     }
 
     if (!_moduleMap.containsKey(moduleName)) {

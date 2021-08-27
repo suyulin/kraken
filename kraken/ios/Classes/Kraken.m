@@ -3,46 +3,51 @@
 
 static NSMutableArray *engineList = nil;
 static NSMutableArray<Kraken*> *instanceList = nil;
+static NSMutableArray *messengerList = nil;
 
 @implementation Kraken
 
 + (Kraken*) instanceByBinaryMessenger: (NSObject<FlutterBinaryMessenger>*) messenger {
-  for (int i = 0; i < engineList.count; i++) {
-    FlutterEngine *engine = engineList[i];
-    if (engine != nil && engine.viewController != nil && engine.viewController.binaryMessenger != nil) {
-      if (engine.viewController.binaryMessenger == messenger) {
+  for (int i = 0; i < messengerList.count; i++) {
+    NSObject<FlutterBinaryMessenger>* msger = messengerList[i];
+      if (msger == messenger) {
         return [instanceList objectAtIndex:i];
       }
-    }
   }
   return nil;
 }
 
 - (instancetype)initWithFlutterEngine: (FlutterEngine*) engine {
-  self.flutterEngine = engine;
 
-  FlutterMethodChannel *channel = [KrakenPlugin getMethodChannel];
+    self.flutterEngine = engine;
 
-  if (channel == nil) {
-    NSException* exception = [NSException
-                              exceptionWithName:@"InitError"
-                              reason:@"KrakenSDK should init after Flutter's plugin registered."
-                              userInfo:nil];
-    @throw exception;
-  }
-  self.channel = channel;
+    return [self initWithBinaryMessenger:engine.binaryMessenger];;
+}
 
-  if (engineList == nil) {
-    engineList = [[NSMutableArray alloc] initWithCapacity: 0];
-  }
-  [engineList addObject: engine];
+- (instancetype _Nonnull)initWithBinaryMessenger: (NSObject<FlutterBinaryMessenger>* _Nonnull) messenger{
 
-  if (instanceList == nil) {
-    instanceList = [[NSMutableArray alloc] initWithCapacity: 0];
-  }
-  [instanceList addObject: self];
+    FlutterMethodChannel *channel = [KrakenPlugin getMethodChannel];
 
-  return self;
+    if (channel == nil) {
+      NSException* exception = [NSException
+                                exceptionWithName:@"InitError"
+                                reason:@"KrakenSDK should init after Flutter's plugin registered."
+                                userInfo:nil];
+      @throw exception;
+    }
+    self.channel = channel;
+
+    if (messengerList == nil) {
+      messengerList = [[NSMutableArray alloc] initWithCapacity: 0];
+    }
+    [messengerList addObject: messenger];
+
+    if (instanceList == nil) {
+      instanceList = [[NSMutableArray alloc] initWithCapacity: 0];
+    }
+    [instanceList addObject: self];
+
+    return self;
 }
 
 - (void) loadUrl:(NSString*)url {

@@ -37,7 +37,15 @@ static FlutterMethodChannel *methodChannel = nil;
       result(nil);
     }
   } else if ([@"invokeMethod" isEqualToString: call.method]) {
-    Kraken* krakenInstance = [Kraken instanceByBinaryMessenger: [self.registrar messenger]];
+      Kraken* krakenInstance = [Kraken instanceByBinaryMessenger: [self.registrar messenger]];
+      NSDictionary *jscontext = call.arguments[@"jsContext"];
+      NSString *url = [jscontext objectForKey:@"url"]?:@"";
+      NSString *contextId = [jscontext objectForKey:@"id"]?:@"";
+      NSMutableArray *args = [call.arguments[@"args"] mutableCopy];
+      if (args.count>=1) {
+          [args insertObject:url atIndex:1];
+          [args insertObject:contextId atIndex:2];
+      }
     FlutterMethodCall* callWrap = [FlutterMethodCall methodCallWithMethodName: call.arguments[@"method"] arguments: call.arguments[@"args"]];
     [krakenInstance _handleMethodCall:callWrap result:result];
   } else if ([@"getTemporaryDirectory" isEqualToString: call.method]) {

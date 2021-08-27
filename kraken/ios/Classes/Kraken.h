@@ -15,6 +15,8 @@ typedef void(^MethodHandler)(FlutterMethodCall* _Nonnull , FlutterResult _Nonnul
 
 - (instancetype _Nonnull)initWithFlutterEngine: (FlutterEngine* _Nonnull) engine;
 
+- (instancetype _Nonnull)initWithBinaryMessenger: (NSObject<FlutterBinaryMessenger>* _Nonnull) messenger;
+
 - (NSString* _Nullable) getUrl;
 
 - (void) loadUrl: (NSString* _Nonnull)url;
