@@ -1,5 +1,6 @@
 
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
@@ -96,6 +97,7 @@ mixin CSSOverflowMixin on ElementBase {
     CSSOverflowType overflowX = renderStyle.overflowX;
     CSSOverflowType overflowY = renderStyle.overflowY;
     bool shouldRepaintSelf = false;
+    TargetPlatform? targetPlatform = renderBoxModel.elementDelegate.getTargetPlatform();
 
     switch(overflowX) {
       case CSSOverflowType.hidden:
@@ -115,7 +117,7 @@ mixin CSSOverflowMixin on ElementBase {
         _scrollableX = KrakenScrollable(
           axisDirection: AxisDirection.right,
           scrollListener: scrollListener,
-          targetPlatform: elementManager.targetPlatform
+          targetPlatform: targetPlatform
         );
         shouldRepaintSelf = true;
         renderBoxModel.clipX = true;
@@ -148,7 +150,7 @@ mixin CSSOverflowMixin on ElementBase {
         _scrollableY = KrakenScrollable(
           axisDirection: AxisDirection.down,
           scrollListener: scrollListener,
-          targetPlatform: elementManager.targetPlatform
+          targetPlatform: targetPlatform
         );
         shouldRepaintSelf = true;
         renderBoxModel.clipY = true;
