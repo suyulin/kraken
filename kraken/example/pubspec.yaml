@@ -12,8 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   kraken: ^0.7.2
-  kraken_webview:
-    path: /Users/tylorvan/youku_kraken/arranged/openkraken/plugins/packages/kraken_webview
+  kraken_webview: ^0.7.0
   kraken_websocket: ^0.2.0-dev.1
 #  kraken_devtools: ^0.3.0
 
