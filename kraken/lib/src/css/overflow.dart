@@ -112,7 +112,11 @@ mixin CSSOverflowMixin on ElementBase {
         break;
       case CSSOverflowType.auto:
       case CSSOverflowType.scroll:
-        _scrollableX = KrakenScrollable(axisDirection: AxisDirection.right, scrollListener: scrollListener);
+        _scrollableX = KrakenScrollable(
+          axisDirection: AxisDirection.right,
+          scrollListener: scrollListener,
+          targetPlatform: elementManager.targetPlatform
+        );
         shouldRepaintSelf = true;
         renderBoxModel.clipX = true;
         renderBoxModel.enableScrollX = true;
@@ -141,7 +145,11 @@ mixin CSSOverflowMixin on ElementBase {
         break;
       case CSSOverflowType.auto:
       case CSSOverflowType.scroll:
-        _scrollableY = KrakenScrollable(axisDirection: AxisDirection.down, scrollListener: scrollListener);
+        _scrollableY = KrakenScrollable(
+          axisDirection: AxisDirection.down,
+          scrollListener: scrollListener,
+          targetPlatform: elementManager.targetPlatform
+        );
         shouldRepaintSelf = true;
         renderBoxModel.clipY = true;
         renderBoxModel.enableScrollY = true;

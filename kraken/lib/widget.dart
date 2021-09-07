@@ -262,17 +262,21 @@ class Kraken extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _KrakenRenderObjectWidget(this);
+    return RepaintBoundary(
+      child: _KrakenRenderObjectWidget(this, context)
+    );
   }
 }
 
 class _KrakenRenderObjectWidget extends SingleChildRenderObjectWidget {
   /// Creates a widget that visually hides its child.
-  const _KrakenRenderObjectWidget(Kraken widget, {Key? key})
+  const _KrakenRenderObjectWidget(Kraken widget, BuildContext context, {Key? key})
       : _krakenWidget = widget,
+        _context = context,
         super(key: key);
 
   final Kraken _krakenWidget;
+  final BuildContext _context;
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -303,7 +307,8 @@ This situation often happened when you trying creating kraken when FlutterView n
       navigationDelegate: _krakenWidget.navigationDelegate,
       devToolsService: _krakenWidget.devToolsService,
       httpClientInterceptor: _krakenWidget.httpClientInterceptor,
-      uriParser: _krakenWidget.uriParser
+      uriParser: _krakenWidget.uriParser,
+      targetPlatform: _getTargetPlatform(),
     );
 
     if (kProfileMode) {
@@ -311,6 +316,13 @@ This situation often happened when you trying creating kraken when FlutterView n
     }
 
     return controller.view.getRootRenderObject();
+  }
+
+
+  // Get the target platform.
+  TargetPlatform _getTargetPlatform() {
+    final ThemeData theme = Theme.of(_context);
+    return theme.platform;
   }
 
   @override

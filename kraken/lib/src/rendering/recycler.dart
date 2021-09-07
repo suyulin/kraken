@@ -123,7 +123,10 @@ class RenderRecyclerLayout extends RenderLayoutBox
     Axis sliverAxis = renderStyle.sliverAxis;
 
     AxisDirection axisDirection = getAxisDirection(sliverAxis);
-    scrollable = KrakenScrollable(axisDirection: axisDirection);
+    scrollable = KrakenScrollable(
+      axisDirection: axisDirection,
+      targetPlatform: elementDelegate.getTargetPlatform()
+    );
 
     return renderViewport = RenderViewport(
       offset: scrollable!.position!,

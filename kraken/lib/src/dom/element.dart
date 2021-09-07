@@ -82,6 +82,8 @@ typedef AfterRendererAttach = void Function();
 typedef GetTargetId = int Function();
 /// Get the font size of root element
 typedef GetRootElementFontSize = double Function();
+/// Get target platform
+typedef GetTargetPlatform = TargetPlatform? Function();
 
 /// Delegate methods passed to renderBoxModel for actions involved with element
 /// (eg. convert renderBoxModel to repaint boundary then attach to element).
@@ -93,6 +95,7 @@ class ElementDelegate {
   AfterRendererAttach afterRendererAttach;
   GetTargetId getTargetId;
   GetRootElementFontSize getRootElementFontSize;
+  GetTargetPlatform getTargetPlatform;
 
   ElementDelegate(
     this.markRendererNeedsLayout,
@@ -101,7 +104,8 @@ class ElementDelegate {
     this.beforeRendererAttach,
     this.afterRendererAttach,
     this.getTargetId,
-    this.getRootElementFontSize
+    this.getRootElementFontSize,
+    this.getTargetPlatform
   );
 }
 
@@ -192,7 +196,8 @@ class Element extends Node
       _beforeRendererAttach,
       _afterRendererAttach,
       _getTargetId,
-      _getRootElementFontSize
+      _getRootElementFontSize,
+      _getTargetPlatform,
     );
   }
 
@@ -225,6 +230,10 @@ class Element extends Node
 
   int _getTargetId() {
     return targetId;
+  }
+
+  TargetPlatform? _getTargetPlatform() {
+    return elementManager.targetPlatform;
   }
 
   double _getRootElementFontSize() {

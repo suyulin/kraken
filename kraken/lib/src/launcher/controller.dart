@@ -86,6 +86,8 @@ class KrakenViewController {
 
   Color? background;
 
+  final TargetPlatform? targetPlatform;
+
   KrakenViewController(
     this._viewportWidth,
     this._viewportHeight, {
@@ -97,6 +99,7 @@ class KrakenViewController {
     this.navigationDelegate,
     this.gestureClient,
     this.eventClient,
+    this.targetPlatform,
   }) {
     if (kProfileMode) {
       PerformanceTiming.instance().mark(PERF_VIEW_CONTROLLER_PROPERTY_INIT);
@@ -139,6 +142,7 @@ class KrakenViewController {
       showPerformanceOverlayOverride: showPerformanceOverlay,
       controller: rootController,
       eventClient: eventClient,
+      targetPlatform: targetPlatform
     );
 
     if (kProfileMode) {
@@ -461,6 +465,8 @@ class KrakenController {
 
   final EventClient? _eventClient;
 
+  final TargetPlatform? targetPlatform;
+
   KrakenController(
     String? name,
     double viewportWidth,
@@ -480,7 +486,8 @@ class KrakenController {
     this.onJSError,
     this.httpClientInterceptor,
     this.devToolsService,
-    this.uriParser
+    this.uriParser,
+    this.targetPlatform,
   })  : _name = name,
         _bundleURL = bundleURL,
         _bundlePath = bundlePath,
@@ -503,6 +510,7 @@ class KrakenController {
         navigationDelegate: navigationDelegate ?? KrakenNavigationDelegate(),
         gestureClient: _gestureClient,
         eventClient: _eventClient,
+        targetPlatform: targetPlatform,
     );
 
     if (kProfileMode) {

@@ -55,14 +55,40 @@ class _CustomTicker extends Ticker {
 class KrakenScrollable with _CustomTickerProviderStateMixin implements ScrollContext {
   AxisDirection? _axisDirection;
   ScrollPosition? position;
-  final ScrollPhysics _physics = BouncingScrollPhysics();
+  ScrollPhysics get _physics => _getScrollPhysics();
   DragStartBehavior dragStartBehavior;
   _ScrollListener? scrollListener;
+  final TargetPlatform? targetPlatform;
+
+  static const ScrollPhysics _bouncingPhysics = BouncingScrollPhysics();
+  static const ScrollPhysics _clampingPhysics = ClampingScrollPhysics();
+
+  /// The scroll physics to use for the platform given by [getPlatform].
+  ///
+  /// Defaults to [RangeMaintainingScrollPhysics] mixed with
+  /// [BouncingScrollPhysics] on iOS and [ClampingScrollPhysics] on
+  /// Android.
+  ScrollPhysics _getScrollPhysics() {
+    if (targetPlatform != null) {
+      switch (targetPlatform) {
+        case TargetPlatform.iOS:
+        case TargetPlatform.macOS:
+          return _bouncingPhysics;
+        case TargetPlatform.android:
+        case TargetPlatform.fuchsia:
+        case TargetPlatform.linux:
+        case TargetPlatform.windows:
+          return _clampingPhysics;
+      }
+    }
+    return _bouncingPhysics;
+  }
 
   KrakenScrollable({
     AxisDirection axisDirection = AxisDirection.down,
     this.dragStartBehavior = DragStartBehavior.start,
     this.scrollListener,
+    this.targetPlatform,
   }) {
     _axisDirection = axisDirection;
     position = ScrollPositionWithSingleContext(physics: _physics, context: this, oldPosition: null);
