@@ -80,6 +80,12 @@ typedef BeforeRendererAttach = RenderObject Function();
 typedef AfterRendererAttach = void Function();
 /// Return the targetId of current element.
 typedef GetTargetId = int Function();
+/// Focus the input element.
+typedef FocusInput = void Function();
+/// Blur the input element.
+typedef BlurInput = void Function();
+/// Scroll the input element to the caret.
+typedef ScrollInputToCaret = void Function();
 /// Get the font size of root element
 typedef GetRootElementFontSize = double Function();
 /// Get target platform
@@ -94,6 +100,9 @@ class ElementDelegate {
   BeforeRendererAttach beforeRendererAttach;
   AfterRendererAttach afterRendererAttach;
   GetTargetId getTargetId;
+  FocusInput focusInput;
+  BlurInput blurInput;
+  ScrollInputToCaret scrollInputToCaret;
   GetRootElementFontSize getRootElementFontSize;
   GetTargetPlatform getTargetPlatform;
 
@@ -104,6 +113,9 @@ class ElementDelegate {
     this.beforeRendererAttach,
     this.afterRendererAttach,
     this.getTargetId,
+    this.focusInput,
+    this.blurInput,
+    this.scrollInputToCaret,
     this.getRootElementFontSize,
     this.getTargetPlatform
   );
@@ -196,8 +208,11 @@ class Element extends Node
       _beforeRendererAttach,
       _afterRendererAttach,
       _getTargetId,
+      _focusInput,
+      _blurInput,
+      _scrollInputToCaret,
       _getRootElementFontSize,
-      _getTargetPlatform,
+      _getTargetPlatform
     );
   }
 
@@ -232,14 +247,28 @@ class Element extends Node
     return targetId;
   }
 
-  TargetPlatform? _getTargetPlatform() {
-    return elementManager.targetPlatform;
+  void _focusInput() {
+    InputElement input = this as InputElement;
+    InputElement.setFocus(input);
+  }
+
+  void _blurInput() {
+    InputElement.clearFocus();
+  }
+
+  void _scrollInputToCaret() {
+    InputElement inputElement = this as InputElement;
+    inputElement.scrollToCaret();
   }
 
   double _getRootElementFontSize() {
     Element rootElement = elementManager.viewportElement;
     RenderBoxModel rootBoxModel = rootElement.renderBoxModel!;
     return rootBoxModel.renderStyle.fontSize;
+  }
+
+  TargetPlatform? _getTargetPlatform() {
+    return elementManager.widgetDelegate?.getTargetPlatform();
   }
 
   @override
